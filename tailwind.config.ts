@@ -57,6 +57,22 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        status: {
+          present: "hsl(var(--status-present))",
+          absent: "hsl(var(--status-absent))",
+          partial: "hsl(var(--status-partial))",
+          justified: "hsl(var(--status-justified))",
+          sunday: "hsl(var(--status-sunday))",
+          holiday: "hsl(var(--status-holiday))",
+        },
+        table: {
+          header: "hsl(var(--table-header))",
+          "header-foreground": "hsl(var(--table-header-foreground))",
+          "row-alt": "hsl(var(--table-row-alt))",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
