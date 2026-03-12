@@ -56,6 +56,10 @@ export function HeaderControls({
 
   const period = getPeriodRange(currentDate);
   const WEEKDAY_ABBR_PT = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+  
+  // Restrict navigation to 2026 only
+  const canGoToPrevious = currentDate.getFullYear() > 2026 || (currentDate.getFullYear() === 2026 && currentDate.getMonth() > 0);
+  const canGoToNext = currentDate.getFullYear() < 2026 || (currentDate.getFullYear() === 2026 && currentDate.getMonth() < 11);
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6 shadow-sm">
@@ -127,6 +131,8 @@ export function HeaderControls({
             variant="outline"
             size="icon"
             onClick={() => onDateChange(subMonths(currentDate, 1))}
+            disabled={!canGoToPrevious}
+            title={!canGoToPrevious ? "Não é possível voltar para 2025" : undefined}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -137,6 +143,8 @@ export function HeaderControls({
             variant="outline"
             size="icon"
             onClick={() => onDateChange(addMonths(currentDate, 1))}
+            disabled={!canGoToNext}
+            title={!canGoToNext ? "Não é possível avançar além de 2026" : undefined}
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
