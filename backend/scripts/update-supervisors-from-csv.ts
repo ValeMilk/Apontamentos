@@ -80,8 +80,9 @@ async function run(){
       let changed = false;
       if (sup.role !== 'supervisor') { sup.role = 'supervisor'; changed = true; }
       if (sup.supervisorId !== rodneySupervisorId) { sup.supervisorId = rodneySupervisorId; changed = true; }
-      // replace employees list with CSV data (or merge?) — we'll replace to reflect new CSV
-      sup.employees = grouped[supName].employees;
+      // replace employees list with CSV data
+      sup.employees = grouped[supName].employees as any;
+      sup.markModified('employees');
       changed = true;
       if (changed) { await sup.save(); updated++; console.log(`Updated supervisor: ${supName}`); }
     }

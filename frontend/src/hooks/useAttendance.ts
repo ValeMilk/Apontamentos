@@ -285,7 +285,8 @@ export function useAttendance() {
       if (field === 'apontador') {
         return [...prev, { employeeId, day, apontador: value, supervisor: value }];
       }
-      return [...prev, { employeeId, day, apontador: '', supervisor: '', [field]: value }];
+      // field é 'supervisor' — criar novo record
+      return [...prev, { employeeId, day, apontador: '', supervisor: value }];
     });
 
     // Se o campo alterado for do supervisor e for uma justificativa de abono,
