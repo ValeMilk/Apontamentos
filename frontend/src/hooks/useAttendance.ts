@@ -154,7 +154,9 @@ export function useAttendance() {
             headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
           });
           if (empRes.ok) {
-            const emps = await empRes.json();
+            const data = await empRes.json();
+            // Phase 3: Support both old array format and new paginated { employees, total, page, limit } format
+            const emps = Array.isArray(data) ? data : (data?.employees || []);
             if (mounted && Array.isArray(emps)) {
               const mapped = emps
                 .filter((e: any) => !isSupervisorRole(e.role || ''))
@@ -539,7 +541,9 @@ export function useAttendance() {
             headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
           });
           if (empRes.ok) {
-            const emps = await empRes.json();
+            const data = await empRes.json();
+            // Phase 3: Support both old array format and new paginated { employees, total, page, limit } format
+            const emps = Array.isArray(data) ? data : (data?.employees || []);
             const mapped = (Array.isArray(emps) ? emps : []).map((e: any) => ({
               id: e.id || `${e.supervisorId}-${e.slug}`,
               name: e.name || e.displayName || e.slug,

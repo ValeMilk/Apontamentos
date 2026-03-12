@@ -136,13 +136,18 @@ const pickCanonicalRecordName = (employeeName: string, employeeId: string, super
   return byIdParts <= byNameParts ? byId : byName;
 };
 
-// GET /api/employees?supervisorId=...
+// GET /api/employees?supervisorId=...&page=1&limit=50 (Phase 3: pagination)
 router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
   try {
-    const { supervisorId, supervisorUserId, changedOnly, startDay, endDay } = req.query;
+    const { supervisorId, supervisorUserId, changedOnly, startDay, endDay, page, limit } = req.query;
     const role = req.user?.role;
     const requesterSupervisorId = req.user?.supervisorId;
     const wantsChangedOnly = String(changedOnly || 'false').toLowerCase() === 'true';
+    
+    // Phase 3: Pagination support
+    const pageNum = Math.max(1, parseInt(String(page || '1')));
+    const pageSize = Math.max(1, Math.min(200, parseInt(String(limit || '50')))); // cap at 200
+    const skip = (pageNum - 1) * pageSize;
 
     let supervisorUsers: any[] = [];
     if (role === 'supervisor') {
@@ -221,7 +226,16 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
     base = collapseGlobalAliases(base);
 
     if (!wantsChangedOnly) {
-      return res.json(base);
+      // Phase 3: Apply pagination before returning
+      const total = base.length;
+      const paginated = base.slice(skip, skip + pageSize);
+      return res.json({
+        employees: paginated,
+        total,
+        page: pageNum,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize)
+      });
     }
 
     const attQuery: any = {};
@@ -274,10 +288,28 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
           }))
           .filter(e => String(e.id || '').trim() !== '')
       );
-      return res.json(fallback);
+      // Phase 3: Apply pagination to fallback
+      const total = fallback.length;
+      const paginated = fallback.slice(skip, skip + pageSize);
+      return res.json({
+        employees: paginated,
+        total,
+        page: pageNum,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize)
+      });
     }
 
-    return res.json(base);
+    // Phase 3: Apply pagination to final result
+    const total = base.length;
+    const paginated = base.slice(skip, skip + pageSize);
+    return res.json({
+      employees: paginated,
+      total,
+      page: pageNum,
+      limit: pageSize,
+      totalPages: Math.ceil(total / pageSize)
+    });
   } catch (e) {
     console.error('Failed to fetch employees', e);
     res.status(500).json({ message: 'Failed to fetch employees' });

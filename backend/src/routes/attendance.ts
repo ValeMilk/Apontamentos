@@ -123,7 +123,7 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res) => {
   }
 });
 
-// Get attendance records. If supervisorId provided, return records for that supervisor's employees (employeeId prefix).
+// Get attendance records. Phase 2 Optimization: Use supervisorId index instead of full table scan
 router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
   try {
     const { supervisorId, changedOnly, startDay, endDay } = req.query;
@@ -138,30 +138,49 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
     const isChanged = (r: any) => String(r?.apontador || '').trim() !== '' || String(r?.supervisor || '').trim() !== '';
 
     if (role === 'supervisor') {
-      // supervisors see their own records and also global records (shared employees)
+      // Phase 2: Use index { supervisorId: 1, day: 1 } instead of full table scan
       const user = await User.findById(req.userId).lean();
       if (!user) return res.status(404).json({ message: 'User not found' });
-      const prefix = user._id.toString();
-      const all = await AttendanceRecord.find({}).lean();
-      let filtered = all.filter(r => 
-        (r.supervisorId && (r.supervisorId === user.supervisorId || r.supervisorId === 'global')) ||
-        (r.employeeId && r.employeeId.startsWith(prefix)) ||
-        (r.employeeId && (r.employeeId.startsWith((user.supervisorId || '')) || (user.supervisorId && r.employeeId.includes(user.supervisorId))))
-      );
-      if (startDay || endDay) filtered = filtered.filter(r => inPeriod(String(r.day || '')));
-      if (wantsChangedOnly) filtered = filtered.filter(r => isChanged(r));
-      return res.json(filtered);
+      
+      // Query: supervisorId matches + allow global records
+      const query: any = {
+        $or: [
+          { supervisorId: user.supervisorId },
+          { supervisorId: 'global' }
+        ]
+      };
+      
+      if (startDay || endDay) {
+        query.day = {};
+        if (startDay) query.day.$gte = String(startDay);
+        if (endDay) query.day.$lte = String(endDay);
+      }
+      
+      // O(log n + k) with index { supervisorId: 1, day: 1 }
+      let recs = await AttendanceRecord.find(query).lean();
+      if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
+      return res.json(recs);
     }
 
     if (role === 'admin' || role === 'expectador') {
       // Allow admin and expectador to request optionally by supervisorId
       if (supervisorId) {
         const sup = (supervisorId as string);
-        let recs = await AttendanceRecord.find({ employeeId: new RegExp(`^${sup}-`) }).lean();
-        if (startDay || endDay) recs = recs.filter(r => inPeriod(String(r.day || '')));
+        const query: any = { supervisorId: sup };
+        
+        if (startDay || endDay) {
+          query.day = {};
+          if (startDay) query.day.$gte = String(startDay);
+          if (endDay) query.day.$lte = String(endDay);
+        }
+        
+        // Phase 2: Use supervisorId index instead of regex - O(log n + k)
+        let recs = await AttendanceRecord.find(query).lean();
         if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
         return res.json(recs);
       }
+      
+      // No supervisorId specified: return all (only for admin/full audit)
       let recs = await AttendanceRecord.find({}).lean();
       if (startDay || endDay) recs = recs.filter(r => inPeriod(String(r.day || '')));
       if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
