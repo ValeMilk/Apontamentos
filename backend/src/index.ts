@@ -30,7 +30,7 @@ app.use('/api/months', monthsRoutes);
 
 const port = process.env.PORT || 5000;
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/attendance-manager';
-const host = '127.0.0.1';
+const host = '0.0.0.0';
 const reconnectIntervalMs = 10000;
 
 const mongooseConnectOptions = {
