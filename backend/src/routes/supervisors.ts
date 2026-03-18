@@ -25,15 +25,13 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
       const all = await User.find({ role: 'supervisor', isActive: true })
         .select('name supervisorId employees role')
         .lean();
-      const filtered = all.filter(hasAnyTeam);
-      return res.json(filtered.map((s: any) => ({ _id: s._id, name: s.name, supervisorId: s.supervisorId, employees: s.employees, role: s.role })));
+      return res.json(all.map((s: any) => ({ _id: s._id, name: s.name, supervisorId: s.supervisorId, employees: s.employees, role: s.role })));
     }
 
-    // Expectador sees supervisors with any team (including manager teams like Rodney)
+    // Expectador sees supervisors (with or without team)
     if (role === 'expectador') {
       const list = await User.find({ role: 'supervisor', isActive: true }).select('name supervisorId employees').lean();
-      const filtered = list.filter(hasAnyTeam);
-      return res.json(filtered.map((s: any) => ({ _id: s._id, name: s.name, supervisorId: s.supervisorId, employees: s.employees })));
+      return res.json(list.map((s: any) => ({ _id: s._id, name: s.name, supervisorId: s.supervisorId, employees: s.employees })));
     }
 
     // Supervisor sees only their own supervisor environment (their user doc)
