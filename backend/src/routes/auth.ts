@@ -377,4 +377,48 @@ router.post('/admin/reset-supervisor-passwords', authenticateJWT, async (req: Au
   }
 });
 
+// TEMPORARY DEBUG: Quick populate employees
+router.post('/debug/quick-populate', async (req: AuthRequest, res: Response) => {
+  try {
+    const employeeSchema = new mongoose.Schema({
+      name: String,
+      role: String,
+      supervisorUserId: mongoose.Schema.Types.ObjectId,
+      department: String,
+      isActive: Boolean,
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now }
+    });
+
+    const Employee = mongoose.model('Employee', employeeSchema, 'employees');
+    const supervisors = await User.find({ role: 'supervisor' });
+
+    // Delete existing
+    await Employee.deleteMany({});
+
+    // Create sample employees for each supervisor (3 each)
+    let total = 0;
+    for (const sup of supervisors) {
+      for (let i = 1; i <= 3; i++) {
+        await Employee.create({
+          name: `FUNC${sup._id.toString().slice(-3).toUpperCase()}-${i}`,
+          role: 'PROMOTOR (A)',
+          supervisorUserId: sup._id,
+          department: sup.name,
+          isActive: true
+        });
+        total++;
+      }
+    }
+
+    res.json({
+      message: 'Quick population completed',
+      total,
+      supervisorCount: supervisors.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to quick populate', error });
+  }
+});
+
 export default router;
