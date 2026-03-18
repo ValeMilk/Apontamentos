@@ -362,6 +362,71 @@ router.post('/debug/populate-employees', async (req: AuthRequest, res: Response)
   }
 });
 
+// TEMPORARY DEBUG: Add employees via JSON POST
+router.post('/debug/add-employees', async (req: AuthRequest, res: Response) => {
+  try {
+    const { employees } = req.body;
+
+    if (!Array.isArray(employees)) {
+      return res.status(400).json({ message: 'Expected array of employees' });
+    }
+
+    // Get supervisors map
+    const supervisors = await User.find({ role: 'supervisor' });
+    const supervisorMap: Record<string, string> = {};
+    supervisors.forEach(s => {
+      supervisorMap[s.name.toUpperCase()] = s._id.toString();
+    });
+
+    // Create employee schema
+    const employeeSchema = new mongoose.Schema({
+      name: String,
+      role: String,
+      supervisorUserId: mongoose.Schema.Types.ObjectId,
+      department: String,
+      isActive: Boolean,
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now }
+    });
+
+    const Employee = mongoose.model('Employee', employeeSchema, 'employees');
+
+    // Delete existing
+    await (Employee.collection as any).deleteMany({});
+
+    // Add employees
+    let created = 0;
+    for (const emp of employees) {
+      const supervisorId = supervisorMap[emp.supervisorName?.toUpperCase()];
+      if (!supervisorId) continue;
+
+      try {
+        await Employee.create({
+          name: emp.name,
+          role: emp.role || 'FUNCIONÁRIO',
+          supervisorUserId: supervisorId,
+          isActive: true,
+          department: emp.supervisorName
+        });
+        created++;
+      } catch (e) {
+        console.error('Error:', e);
+      }
+    }
+
+    const total = await (Employee.collection as any).countDocuments();
+
+    res.json({
+      message: 'Employees added successfully',
+      created,
+      total
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to add employees', error });
+  }
+});
+
 // TEMPORARY: Reset supervisor passwords
 router.post('/admin/reset-supervisor-passwords', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
