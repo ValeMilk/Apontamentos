@@ -231,6 +231,35 @@ router.get('/profile', authenticateJWT, async (req: AuthRequest, res: Response) 
   }
 });
 
+// TEMPORARY DEBUG: Reset supervisor passwords (unprotected endpoint)
+router.post('/debug/reset-passwords', async (req: AuthRequest, res: Response) => {
+  try {
+    const updates = [
+      { email: 'paulinho-de-paula@attendance.com', password: 'paulinho123' },
+      { email: 'mariana-moura@attendance.com', password: 'mariana123' },
+      { email: 'jose-furtado@attendance.com', password: 'jose123' },
+      { email: 'paulo-oliveira@attendance.com', password: 'paulo123' }
+    ];
+
+    const results = [];
+    for (const update of updates) {
+      const hashedPassword = await bcryptjs.hash(update.password, 10);
+      const result = await User.findOneAndUpdate(
+        { email: update.email },
+        { password: hashedPassword },
+        { new: true }
+      );
+      if (result) {
+        results.push({ email: result.email, name: result.name, password: update.password });
+      }
+    }
+
+    res.json({ message: 'Passwords reset successfully', results });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to reset passwords', error });
+  }
+});
+
 // TEMPORARY: Reset supervisor passwords
 router.post('/admin/reset-supervisor-passwords', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
