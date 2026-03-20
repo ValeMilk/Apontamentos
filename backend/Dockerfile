@@ -10,6 +10,9 @@ RUN npm ci --only=production
 # Copiar código fonte
 COPY . .
 
+# Copiar CSV para seed
+COPY ../frontend/public/Pasta1.csv ./public/Pasta1.csv
+
 # Build TypeScript
 RUN npm install -D typescript tsx @types/node
 RUN npm run build

@@ -41,9 +41,8 @@ async function seedEmployees() {
     // Find CSV file
     const possiblePaths = [
       '/app/public/Pasta1.csv',
-      '/opt/attendance-manager/frontend/public/Pasta1.csv',
-      path.join(process.cwd(), '../frontend/public/Pasta1.csv'),
-      path.join(process.cwd(), '../../frontend/public/Pasta1.csv')
+      path.join(process.cwd(), './public/Pasta1.csv'),
+      path.join(__dirname, '../../public/Pasta1.csv')
     ];
 
     let csvPath = '';
