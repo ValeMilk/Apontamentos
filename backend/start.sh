@@ -1,5 +1,5 @@
 #!/bin/sh
 echo "Running employee seed..."
-npm run init-seed || true
+node dist/scripts/init-seed.js 2>&1 || true
 echo "Starting application..."
 node dist/index.js
