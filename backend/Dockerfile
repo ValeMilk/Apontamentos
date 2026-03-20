@@ -24,5 +24,13 @@ EXPOSE 5000
 ENV NODE_ENV=production
 ENV PORT=5000
 
+# Criar script de inicialização
+RUN echo '#!/bin/sh\n\
+echo "Running employee seed..."\n\
+npm run init-seed || true\n\
+echo "Starting application..."\n\
+node dist/index.js\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
 # Comando de inicialização
-CMD ["node", "dist/index.js"]
+CMD ["/app/start.sh"]
