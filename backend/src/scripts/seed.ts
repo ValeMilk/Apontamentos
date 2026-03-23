@@ -83,11 +83,16 @@ async function seed() {
     await admin.save();
     console.log('✓ Admin created: admin / admin');
 
-    // Read and parse CSV
-    const csvPath = path.join(process.cwd(), '..', 'frontend', 'public', 'Pasta1.csv');
+    // Read and parse CSV - try multiple possible locations
+    const possiblePaths = [
+      path.join(process.cwd(), 'public', 'Pasta1.csv'),
+      path.join(process.cwd(), 'Pasta1.csv'),
+      path.join(process.cwd(), '..', 'frontend', 'public', 'Pasta1.csv'),
+    ];
+    const csvPath = possiblePaths.find((p) => fs.existsSync(p));
 
-    if (!fs.existsSync(csvPath)) {
-      console.warn(`⚠ CSV file not found at ${csvPath}. Skipping supervisor seed.`);
+    if (!csvPath) {
+      console.warn(`⚠ CSV file not found. Tried: ${possiblePaths.join(', ')}. Skipping supervisor seed.`);
       await mongoose.disconnect();
       return;
     }
