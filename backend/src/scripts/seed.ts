@@ -123,7 +123,9 @@ async function seed() {
       console.log(`  ✓ "RODNEY" (Gerente - 0 employees) | login: rodney`);
     }
 
-    // Create supervisor users
+    // Create supervisor users (todos reportam ao Rodney)
+    const rodneyEmployees: Array<{ name: string; role: string }> = [];
+
     for (const supervisorName of Object.keys(supervisorData)) {
       // Gerar username a partir do nome do supervisor (ex: "MARIANA MOURA" -> "mariana moura")
       const username = supervisorName.trim().toLowerCase();
@@ -146,7 +148,7 @@ async function seed() {
         username: username,
         password: hashedPwd,
         role: 'supervisor',
-        supervisorId: supervisorId,
+        supervisorId: 'rodney', // Todos reportam ao Rodney
         isActive: true,
         employees: supervisorData[supervisorName].employees,
       });
@@ -155,6 +157,18 @@ async function seed() {
       console.log(
         `  ✓ "${supervisorName}" (${supervisorData[supervisorName].employees.length} employees) | login: ${username}`
       );
+
+      // Adicionar ao array de employees do Rodney
+      rodneyEmployees.push({ name: supervisorName, role: 'supervisor' });
+    }
+
+    // Atualizar Rodney com a lista de supervisores como employees
+    if (rodneyEmployees.length > 0) {
+      await User.updateOne(
+        { username: 'rodney', role: 'supervisor' },
+        { $set: { employees: rodneyEmployees } }
+      );
+      console.log(`  ✓ Rodney atualizado com ${rodneyEmployees.length} supervisores como equipe`);
     }
 
     console.log('\n✓ Seed completed successfully!');
