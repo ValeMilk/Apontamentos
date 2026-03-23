@@ -159,6 +159,8 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
       supervisorUsers = [me];
     } else if (role === 'gerente') {
       // Gerente: employees = all supervisors
+      const me = await User.findById(req.userId).select('_id').lean();
+      const gerenteUserId = String((me as any)?._id || req.userId);
       const allSupervisors = await User.find({ role: 'supervisor', isActive: true })
         .select('name supervisorId _id').lean();
       const result = allSupervisors.map((s: any) => ({
@@ -166,7 +168,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
         name: slugify(String(s.name || '')),
         role: 'SUPERVISOR',
         supervisorId: 'gerente',
-        supervisorUserId: String(s._id || ''),
+        supervisorUserId: gerenteUserId,
       }));
       const total = result.length;
       const paginated = result.slice(skip, skip + pageSize);
@@ -188,6 +190,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
           supervisorUsers = [];
         } else if ((selected as any).role === 'gerente') {
           // Gerente selected: return all supervisors as their employees
+          const gerenteUserId = String((selected as any)._id || '');
           const allSupervisors = await User.find({ role: 'supervisor', isActive: true })
             .select('name supervisorId _id').lean();
           const result = allSupervisors.map((s: any) => ({
@@ -195,7 +198,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
             name: slugify(String(s.name || '')),
             role: 'SUPERVISOR',
             supervisorId: 'gerente',
-            supervisorUserId: String(s._id || ''),
+            supervisorUserId: gerenteUserId,
           }));
           const total = result.length;
           const paginated = result.slice(skip, skip + pageSize);
