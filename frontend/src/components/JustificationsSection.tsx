@@ -65,7 +65,7 @@ export function JustificationsSection({
                 <SelectContent>
                   {employees.map(emp => (
                     <SelectItem key={emp.id} value={emp.id}>
-                      {emp.name}
+                      {emp.name.toUpperCase()}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -142,7 +142,7 @@ export function JustificationsSection({
               <tbody>
                 {justifications.map((just, index) => (
                   <tr key={just.id} className={index % 2 === 1 ? 'bg-muted/50' : ''}>
-                    <td className="px-3 py-2 font-medium">{getEmployeeName(just.employeeId)}</td>
+                    <td className="px-3 py-2 font-medium uppercase">{getEmployeeName(just.employeeId)}</td>
                     <td className="px-3 py-2 text-center">{just.day}</td>
                     <td className="px-3 py-2">{just.text}</td>
                     <td className="px-2 py-2">

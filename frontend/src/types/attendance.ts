@@ -37,8 +37,8 @@ export interface DayInfo {
   holidayName?: string;
 }
 
-export const APONTADOR_CODES: AttendanceCode[] = ['P', 'F', 'FT', 'FM', ''];
-export const SUPERVISOR_CODES: AttendanceCode[] = ['P', 'F', 'FT', 'FM', 'AT', 'ABF', 'ABT', 'FERI', ''];
+export const APONTADOR_CODES: AttendanceCode[] = ['P', 'F', 'FT', 'FM', 'FOLGA', ''];
+export const SUPERVISOR_CODES: AttendanceCode[] = ['P', 'F', 'FT', 'FM', 'AT', 'ABF', 'ABT', 'FERI', 'FOLGA', ''];
 
 export const CODE_LABELS: Record<AttendanceCode, string> = {
   'P': 'Presente',

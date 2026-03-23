@@ -2,8 +2,8 @@ import { useAttendance, usePersistCurrentDate } from '@/hooks/useAttendance';
 import { useMonthStatus } from '@/hooks/useMonthStatus';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Login } from '@/components/Login';
-import { UserManagement } from '@/components/UserManagement';
 import { HeaderControls } from '@/components/HeaderControls';
+import { Link } from 'react-router-dom';
 import { AttendanceTable } from '@/components/AttendanceTable';
 import { JustificationsSection } from '@/components/JustificationsSection';
 import { DataExport } from '@/components/DataExport';
@@ -86,11 +86,21 @@ const Index = () => {
             <h1 className="text-xl font-bold tracking-tight">Sistema de Apontamento de Presença</h1>
             <p className="text-sm text-primary-foreground/80">Gestão de frequência de funcionários</p>
           </div>
-          <div className="flex items-center gap-2 text-sm bg-primary-foreground/10 px-3 py-1.5 rounded-lg">
-            <span className="text-primary-foreground/70">Usuário:</span>
-            <span className="font-semibold">
-              {currentUserRole === 'admin' ? 'Administrador' : currentUserRole === 'expectador' ? 'Expectador' : currentSupervisor?.name || 'Supervisor'}
-            </span>
+          <div className="flex items-center gap-3">
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin/usuarios"
+                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium"
+              >
+                Central de Usuários
+              </Link>
+            )}
+            <div className="text-sm bg-primary-foreground/10 px-3 py-1.5 rounded-lg">
+              <span className="text-primary-foreground/70">Usuário:</span>{' '}
+              <span className="font-semibold">
+                {currentUserRole === 'admin' ? 'Administrador' : currentUserRole === 'expectador' ? 'Expectador' : currentSupervisor?.name || 'Supervisor'}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -150,8 +160,6 @@ const Index = () => {
         )}
 
         {/* If not authenticated, show login */}
-        {/* show user management for admin within the auth provider */}
-        <AuthArea />
       </main>
 
       {/* Footer */}
@@ -165,17 +173,3 @@ const Index = () => {
 };
 
 export default Index;
-
-function AuthArea(){
-  const { user } = useAuth();
-  if(!user) return (
-    <main className="max-w-[1800px] mx-auto px-4 py-6">
-      <Login />
-    </main>
-  );
-  return (
-    <main className="max-w-[1800px] mx-auto px-4 py-6">
-      {user.role === 'admin' && <UserManagement />}
-    </main>
-  );
-}

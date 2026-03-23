@@ -189,7 +189,7 @@ export function AttendanceTable({
                       index % 2 === 1 && "bg-table-row-alt"
                     )}
                   >
-                    <td className="border-r border-border/30 px-2 py-1 font-medium text-[10px] text-foreground sticky left-0 bg-card z-10">
+                    <td className="border-r border-border/30 px-2 py-1 font-medium text-[10px] text-foreground sticky left-0 bg-card z-10 uppercase">
                       {employee.name}
                     </td>
                     <td className="border-r border-border/30 px-2 py-1 text-[10px] text-muted-foreground">
