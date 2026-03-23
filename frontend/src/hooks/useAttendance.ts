@@ -143,6 +143,7 @@ export function useAttendance() {
           id: (u._id || u.id || u.supervisorId).toString(),
           name: u.name,
           store: `REGIÃO - ${u.name}`,
+          supervisorId: (u.supervisorId || '').toString(),
         }));
         const deduped = dedupeById(mapped);
         setSupervisorsState(deduped);

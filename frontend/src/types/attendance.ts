@@ -14,6 +14,7 @@ export interface Supervisor {
   id: string;
   name: string;
   store: string;
+  supervisorId?: string;
 }
 
 export interface AttendanceRecord {
