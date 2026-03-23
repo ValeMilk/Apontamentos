@@ -1,5 +1,18 @@
 #!/bin/sh
-echo "Running employee seed..."
-node dist/scripts/init-seed.js 2>&1 || true
-echo "Starting application..."
+set -e
+
+echo "==========================================";
+echo "🌱 Running employee seed..."
+echo "==========================================";
+
+node dist/scripts/seed-employees.js || {
+  echo "⚠ Seed script failed, but continuing...";
+}
+
+echo "";
+echo "==========================================";
+echo "🚀 Starting attendance-manager API..."
+echo "==========================================";
+echo "";
+
 node dist/index.js

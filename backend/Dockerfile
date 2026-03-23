@@ -10,8 +10,12 @@ RUN npm ci --only=production
 # Copiar código fonte
 COPY . .
 
-# Copiar CSV para seed
+# Criar diretório public e copiar CSV para seed
+RUN mkdir -p ./public
 COPY ../frontend/public/Pasta1.csv ./public/Pasta1.csv
+
+# Copiar script de seed JavaScript
+COPY ./scripts/seed-employees.js ./dist/scripts/seed-employees.js
 
 # Build TypeScript
 RUN npm install -D typescript tsx @types/node
