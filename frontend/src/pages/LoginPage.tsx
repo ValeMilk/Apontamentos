@@ -6,6 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+const USERS = [
+  { label: 'Admin', value: 'admin' },
+  { label: 'Rodney', value: 'rodney' },
+  { label: 'Mariana Moura', value: 'mariana moura' },
+  { label: 'Jose Furtado', value: 'jose furtado' },
+  { label: 'Paulo Oliveira', value: 'paulo oliveira' },
+  { label: 'Paulinho de Paula', value: 'paulinho de paula' },
+];
+
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -21,7 +30,6 @@ export function LoginPage() {
 
     try {
       await login(username, password);
-      // redirect to main page after successful login
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -51,15 +59,21 @@ export function LoginPage() {
                 <label htmlFor="username" className="text-sm font-medium">
                   Usuário
                 </label>
-                <Input
+                <select
                   id="username"
-                  type="text"
-                  placeholder="seu usuário"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}
                   required
-                />
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">Selecione o usuário</option>
+                  {USERS.map((u) => (
+                    <option key={u.value} value={u.value}>
+                      {u.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -81,8 +95,6 @@ export function LoginPage() {
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
-
-            {/* Demo credentials removed */}
           </CardContent>
         </Card>
 
