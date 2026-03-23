@@ -7,6 +7,7 @@ export interface Employee {
   name: string;
   role: string;
   supervisorId: string;
+  supervisorUserId?: string;
 }
 
 export interface Supervisor {

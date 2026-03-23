@@ -26,7 +26,7 @@ export function DataExport({
     const rows: Record<string, string>[] = [];
 
     const WEEKDAY_ABBR_PT = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
-    const employeesToUse = selectedSupervisor === 'all' ? employees : employees.filter(e => e.supervisorId === selectedSupervisor);
+    const employeesToUse = selectedSupervisor === 'all' ? employees : employees.filter(e => (e as any).supervisorUserId === selectedSupervisor || e.supervisorId === selectedSupervisor);
 
     daysInMonth.forEach(dayInfo => {
       const dateLabel = format(dayInfo.date, 'dd/MM/yyyy');
@@ -90,7 +90,7 @@ export function DataExport({
           <select
             value={selectedSupervisor}
             onChange={(e) => setSelectedSupervisor(e.target.value)}
-            className="border px-2 py-1 rounded text-sm"
+            className="border px-2 py-1 rounded text-sm text-foreground bg-background"
           >
             <option value="all">Todos Supervisores</option>
             {supervisors.map(s => (

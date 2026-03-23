@@ -161,7 +161,7 @@ export function AttendanceTable({
                             // aplicar automaticamente ao selecionar
                             applyCodeToAll(dayInfo.day, code);
                           }}
-                          className="h-7 text-[10px] rounded border px-1"
+                          className="h-7 text-[10px] rounded border px-1 text-foreground bg-background"
                           disabled={dayInfo.isSunday || !isAdmin}
                           title={dayInfo.isSunday ? 'Operação não disponível em domingos' : isAdmin ? 'Selecione o código para aplicar a todos' : 'Apenas o Apontador pode selecionar'}
                         >
@@ -189,7 +189,7 @@ export function AttendanceTable({
                       index % 2 === 1 && "bg-table-row-alt"
                     )}
                   >
-                    <td className="border-r border-border/30 px-2 py-1 font-medium text-[10px] text-foreground sticky left-0 bg-card z-10 uppercase">
+                    <td className="border-r border-border/30 px-2 py-1 font-medium text-[10px] text-foreground sticky left-0 bg-card z-10">
                       {employee.name}
                     </td>
                     <td className="border-r border-border/30 px-2 py-1 text-[10px] text-muted-foreground">
