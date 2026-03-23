@@ -104,9 +104,7 @@ export function useAttendance() {
   };
 
   const filteredEmployees = useMemo(() => {
-    const workers = dedupeById(employeesState).filter(
-      (e: any) => !isSupervisorRole(e.role)
-    );
+    const workers = dedupeById(employeesState);
 
     if (selectedSupervisor === 'all') return workers;
 
@@ -160,7 +158,6 @@ export function useAttendance() {
             const emps = Array.isArray(data) ? data : (data?.employees || []);
             if (mounted && Array.isArray(emps)) {
               const mapped = emps
-                .filter((e: any) => !isSupervisorRole(e.role || ''))
                 .map((e: any) => ({
                   id: e.id || `${e.supervisorId}-${e.slug}`,
                   name: e.name || e.displayName || e.slug,
