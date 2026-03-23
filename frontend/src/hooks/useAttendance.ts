@@ -166,7 +166,7 @@ export function useAttendance() {
                   name: e.name || e.displayName || e.slug,
                   role: e.role || 'FUNCIONÁRIO',
                   supervisorId: e.supervisorId,
-                  supervisorUserId: e.supervisorUserId || (selectedSupervisor !== 'all' ? String(selectedSupervisor) : ''),
+                  supervisorUserId: e.supervisorUserId || '',
                 }));
               setEmployeesState(dedupeById(mapped));
               employeesLoadedFromApi = true;

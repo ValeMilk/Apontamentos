@@ -203,6 +203,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
     const rosterEmployees: any[] = [];
     for (const sup of supervisorUsers) {
       const supId = String((sup as any).supervisorId || '');
+      const supUserId = String((sup as any)._id || '');
       const emps = Array.isArray((sup as any).employees) ? (sup as any).employees : [];
       for (const emp of emps) {
         const roleName = String(emp?.role || '').toLowerCase();
@@ -210,7 +211,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
         const name = String(emp?.name || '').trim();
         if (!name) continue;
         const id = `${supId}-${slugify(name)}`;
-        rosterEmployees.push({ id, name: slugify(name), role: emp.role || '', supervisorId: supId });
+        rosterEmployees.push({ id, name: slugify(name), role: emp.role || '', supervisorId: supId, supervisorUserId: supUserId });
       }
     }
 
