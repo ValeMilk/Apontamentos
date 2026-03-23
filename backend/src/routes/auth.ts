@@ -203,22 +203,22 @@ router.get('/profile', authenticateJWT, async (req: AuthRequest, res: Response) 
 router.post('/debug/reset-passwords', async (req: AuthRequest, res: Response) => {
   try {
     const updates = [
-      { email: 'paulinho-de-paula@attendance.com', password: 'paulinho123' },
-      { email: 'mariana-moura@attendance.com', password: 'mariana123' },
-      { email: 'jose-furtado@attendance.com', password: 'jose123' },
-      { email: 'paulo-oliveira@attendance.com', password: 'paulo123' }
+      { username: 'paulinho de paula', password: 'paulinho123' },
+      { username: 'mariana moura', password: 'mariana123' },
+      { username: 'jose furtado', password: 'jose123' },
+      { username: 'paulo oliveira', password: 'paulo123' }
     ];
 
     const results = [];
     for (const update of updates) {
       const hashedPassword = await bcryptjs.hash(update.password, 10);
       const result = await User.findOneAndUpdate(
-        { email: update.email },
+        { username: update.username },
         { password: hashedPassword },
         { new: true }
       );
       if (result) {
-        results.push({ email: result.email, name: result.name, password: update.password });
+        results.push({ username: result.username, name: result.name, password: update.password });
       }
     }
 
@@ -402,22 +402,22 @@ router.post('/admin/reset-supervisor-passwords', authenticateJWT, async (req: Au
     }
 
     const updates = [
-      { email: 'paulinho-de-paula@attendance.com', password: 'paulinho123' },
-      { email: 'mariana-moura@attendance.com', password: 'mariana123' },
-      { email: 'jose-furtado@attendance.com', password: 'jose123' },
-      { email: 'paulo-oliveira@attendance.com', password: 'paulo123' }
+      { username: 'paulinho de paula', password: 'paulinho123' },
+      { username: 'mariana moura', password: 'mariana123' },
+      { username: 'jose furtado', password: 'jose123' },
+      { username: 'paulo oliveira', password: 'paulo123' }
     ];
 
     const results = [];
     for (const update of updates) {
       const hashedPassword = await bcryptjs.hash(update.password, 10);
       const result = await User.findOneAndUpdate(
-        { email: update.email },
+        { username: update.username },
         { password: hashedPassword },
         { new: true }
       );
       if (result) {
-        results.push({ email: result.email, name: result.name, password: update.password });
+        results.push({ username: result.username, name: result.name, password: update.password });
       }
     }
 
