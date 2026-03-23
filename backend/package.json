@@ -8,8 +8,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "tsx src/scripts/seed.ts",
-    "init-seed": "tsx src/scripts/init-seed.ts"
+    "seed": "node dist/scripts/seed.js",
+    "init-seed": "node dist/scripts/init-seed.js"
   },
   "dependencies": {
     "@prisma/client": "^7.5.0",
