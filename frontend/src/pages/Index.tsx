@@ -50,7 +50,7 @@ const Index = () => {
         if (user.role === 'supervisor' || user.role === 'gerente') {
           // auto-select the supervisor id associated with the logged user so the UI
           // filters employees and shows the correct view for that supervisor
-          const supId = (user as any).supervisorId || (user as any).id || 'all';
+          const supId = (user as any).id || (user as any).supervisorId || 'all';
           setSelectedSupervisor(supId);
         }
       } else {
