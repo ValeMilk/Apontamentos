@@ -10,7 +10,6 @@ interface AttendanceTableProps {
   getRecord: (employeeId: string, day: string) => AttendanceRecord;
   updateRecord: (employeeId: string, day: string, field: 'apontador' | 'supervisor', value: AttendanceCode) => void;
   getTotals: (day: string) => number;
-  getEmployeeFaltas: (employeeId: string) => number;
   currentUserRole: 'admin' | 'gerente' | 'supervisor' | 'expectador';
   supervisorName?: string;
   storeName?: string;
@@ -25,7 +24,6 @@ export function AttendanceTable({
   getRecord,
   updateRecord,
   getTotals,
-  getEmployeeFaltas,
   currentUserRole,
   supervisorName,
   storeName,
@@ -38,7 +36,7 @@ export function AttendanceTable({
   const isSupervisor = currentUserRole === 'supervisor' || currentUserRole === 'gerente';
   const isEditDisabled = isSupervisor && isMonthLocked;
   // calcular largura mínima da tabela dinamicamente: larguras fixas das colunas iniciais + colunas de dias
-  const fixedColsWidth = 220 + 100 + 40 + 45; // largura aproximada das 4 colunas fixas (FUNC, FUNÇÃO, APT/SUP, OCORR)
+  const fixedColsWidth = 220 + 100 + 40; // largura aproximada das 3 colunas fixas (FUNC, FUNÇÃO, APT/SUP)
   const dayColWidth = 36; // largura por dia (inclui padding/margem)
   const tableMinWidth = Math.max(1400, fixedColsWidth + (daysInMonth.length * dayColWidth));
   function setAllPresentForDay(day: string) {
@@ -144,9 +142,6 @@ export function AttendanceTable({
                   <div>APT</div>
                   <div>SUP</div>
                 </th>
-                <th className="table-header-cell border-r border-border/30 px-1 py-1 w-[45px] text-center text-[9px] text-destructive">
-                  OCORR.
-                </th>
                 {daysInMonth.map((dayInfo) => (
                   <th
                     key={dayInfo.day}
@@ -206,16 +201,6 @@ export function AttendanceTable({
                         <span className="py-0.5">SUP</span>
                       </div>
                     </td>
-                    <td className="border-r border-border/30 px-1 py-1 w-[45px] text-center">
-                      {(() => {
-                        const count = getEmployeeFaltas(employee.id);
-                        return (
-                          <span className={cn("text-[11px] font-bold", count > 0 ? "text-destructive" : "text-muted-foreground")}>
-                            {count}
-                          </span>
-                        );
-                      })()}
-                    </td>
                     {daysInMonth.map((dayInfo) => {
                       const record = getRecord(employee.id, dayInfo.day);
                       return (
@@ -242,7 +227,6 @@ export function AttendanceTable({
                   TOTAL DE FUNCIONÁRIOS
                 </td>
                 <td className="text-center font-bold text-[11px]">{employees.length}</td>
-                <td />
                 <td colSpan={daysInMonth.length} />
               </tr>
               <tr className="border-t border-border">
@@ -250,9 +234,6 @@ export function AttendanceTable({
                   TOTAL OCORRÊNCIAS
                 </td>
                 <td />
-                <td className="text-center text-[11px] font-bold text-destructive">
-                  {employees.reduce((sum, emp) => sum + getEmployeeFaltas(emp.id), 0)}
-                </td>
                 {daysInMonth.map((dayInfo) => (
                   <td 
                     key={dayInfo.day} 

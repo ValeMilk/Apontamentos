@@ -139,7 +139,6 @@ const Index = () => {
           getRecord={getRecord}
           updateRecord={updateRecord}
           getTotals={getTotals}
-          getEmployeeFaltas={getEmployeeFaltas}
           currentUserRole={currentUserRole}
           supervisorName={currentSupervisor?.name}
           storeName={currentSupervisor?.store}
