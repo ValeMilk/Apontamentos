@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,14 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const USERS = [
-  { label: 'Admin', value: 'admin' },
-  { label: 'Rodney (Gerente)', value: 'rodney' },
-  { label: 'Mariana Moura', value: 'mariana moura' },
-  { label: 'Jose Furtado', value: 'jose furtado' },
-  { label: 'Paulo Oliveira', value: 'paulo oliveira' },
-  { label: 'Paulinho de Paula', value: 'paulinho de paula' },
-];
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -22,6 +15,14 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<{ label: string; value: string }[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/auth/login-users`)
+      .then(r => r.json())
+      .then(data => setUsers(data))
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +69,7 @@ export function LoginPage() {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <option value="">Selecione o usuário</option>
-                  {USERS.map((u) => (
+                  {users.map((u) => (
                     <option key={u.value} value={u.value}>
                       {u.label}
                     </option>

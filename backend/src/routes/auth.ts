@@ -9,6 +9,30 @@ import { Response } from 'express';
 
 const router = Router();
 
+// Public: list active users for login dropdown (no passwords exposed)
+router.get('/login-users', async (_req, res: Response) => {
+  try {
+    const users = await User.find({ isActive: true })
+      .select('name username role')
+      .sort({ role: 1, name: 1 })
+      .lean();
+
+    const ROLE_ORDER: Record<string, number> = { admin: 0, gerente: 1, supervisor: 2, expectador: 3 };
+    const ROLE_LABELS: Record<string, string> = { admin: 'Admin', gerente: 'Gerente', supervisor: 'Supervisor', expectador: 'Expectador' };
+
+    const result = users
+      .sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9))
+      .map(u => ({
+        label: u.role !== 'supervisor' ? `${u.name} (${ROLE_LABELS[u.role] || u.role})` : u.name,
+        value: u.username,
+      }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch users' });
+  }
+});
+
 // Register
 router.post('/register', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
