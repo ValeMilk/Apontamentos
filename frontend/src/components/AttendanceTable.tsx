@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { Employee, DayInfo, AttendanceRecord, AttendanceCode } from '@/types/attendance';
 import { AttendanceCell } from './AttendanceCell';
@@ -9,6 +9,7 @@ interface AttendanceTableProps {
   daysInMonth: DayInfo[];
   getRecord: (employeeId: string, day: string) => AttendanceRecord;
   updateRecord: (employeeId: string, day: string, field: 'apontador' | 'supervisor', value: AttendanceCode) => void;
+  addJustification?: (employeeId: string, day: string, text: string, applyToSupervisor?: boolean, supervisorCode?: AttendanceCode) => void;
   getTotals: (day: string) => number;
   currentUserRole: 'admin' | 'gerente' | 'supervisor' | 'expectador';
   supervisorName?: string;
@@ -18,11 +19,19 @@ interface AttendanceTableProps {
   isMonthLocked?: boolean;
 }
 
+interface JustificationModal {
+  employeeId: string;
+  day: string;
+  code: AttendanceCode;
+  employeeName: string;
+}
+
 export function AttendanceTable({
   employees,
   daysInMonth,
   getRecord,
   updateRecord,
+  addJustification,
   getTotals,
   currentUserRole,
   supervisorName,
@@ -32,9 +41,42 @@ export function AttendanceTable({
   isMonthLocked = false,
 }: AttendanceTableProps) {
   const [bulkCodeByDay, setBulkCodeByDay] = useState<Record<string, string>>({});
+  const [justModal, setJustModal] = useState<JustificationModal | null>(null);
+  const [justText, setJustText] = useState('');
+  const justTextRef = useRef<HTMLTextAreaElement>(null);
   const isAdmin = currentUserRole === 'admin';
   const isSupervisor = currentUserRole === 'supervisor' || currentUserRole === 'gerente';
   const isEditDisabled = isSupervisor && isMonthLocked;
+
+  const ABONO_CODES: AttendanceCode[] = ['ABF', 'ABT'];
+
+  function handleSupervisorChange(employeeId: string, day: string, value: AttendanceCode, employeeName: string) {
+    if (ABONO_CODES.includes(value) && addJustification) {
+      // Abrir modal de justificativa
+      setJustText('');
+      setJustModal({ employeeId, day, code: value, employeeName });
+      setTimeout(() => justTextRef.current?.focus(), 100);
+    } else {
+      updateRecord(employeeId, day, 'supervisor', value);
+    }
+  }
+
+  function handleJustModalConfirm() {
+    if (!justModal) return;
+    updateRecord(justModal.employeeId, justModal.day, 'supervisor', justModal.code);
+    if (addJustification && justText.trim()) {
+      addJustification(justModal.employeeId, justModal.day, justText.trim(), false, justModal.code);
+    }
+    setJustModal(null);
+    setJustText('');
+  }
+
+  function handleJustModalSkip() {
+    if (!justModal) return;
+    updateRecord(justModal.employeeId, justModal.day, 'supervisor', justModal.code);
+    setJustModal(null);
+    setJustText('');
+  }
   // calcular largura mínima da tabela dinamicamente: larguras fixas das colunas iniciais + colunas de dias
   const fixedColsWidth = 220 + 100 + 40; // largura aproximada das 3 colunas fixas (FUNC, FUNÇÃO, APT/SUP)
   const dayColWidth = 36; // largura por dia (inclui padding/margem)
@@ -88,6 +130,49 @@ export function AttendanceTable({
 
   return (
     <div style={{ overflowX: 'auto', width: '100%' }}>
+      {/* Modal de justificativa para ABF/ABT */}
+      {justModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-[#0059A0] px-6 py-4">
+              <h2 className="text-white font-bold text-base">Justificativa de Abono</h2>
+              <p className="text-white/70 text-xs mt-0.5">
+                {justModal.code} — {justModal.employeeName.toUpperCase()} — {format(new Date(justModal.day + 'T12:00:00'), 'dd/MM/yyyy')}
+              </p>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Justificativa *</label>
+                <textarea
+                  ref={justTextRef}
+                  value={justText}
+                  onChange={e => setJustText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (justText.trim()) handleJustModalConfirm(); } }}
+                  placeholder="Digite a justificativa..."
+                  rows={3}
+                  className="mt-1.5 w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm resize-none transition-all focus:outline-none focus:border-[#0059A0] focus:bg-white focus:ring-4 focus:ring-[#0059A0]/10"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Enter para confirmar • Shift+Enter para nova linha</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleJustModalConfirm}
+                  disabled={!justText.trim()}
+                  className="flex-1 h-10 bg-[#0059A0] hover:bg-[#004A85] text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Confirmar
+                </button>
+                <button
+                  onClick={handleJustModalSkip}
+                  className="flex-1 h-10 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold rounded-xl text-sm transition-all"
+                >
+                  Aplicar sem justificativa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ minWidth: `${tableMinWidth}px` }}>
         {/* Month Lock Warning */}
         {isEditDisabled && (
@@ -210,7 +295,7 @@ export function AttendanceTable({
                             apontadorValue={record.apontador}
                             supervisorValue={record.supervisor}
                             onApontadorChange={(value) => updateRecord(employee.id, dayInfo.day, 'apontador', value)}
-                            onSupervisorChange={(value) => updateRecord(employee.id, dayInfo.day, 'supervisor', value)}
+                            onSupervisorChange={(value) => handleSupervisorChange(employee.id, dayInfo.day, value, employee.name)}
                             currentUserRole={currentUserRole}
                             isDisabled={isEditDisabled}
                           />

@@ -138,6 +138,7 @@ const Index = () => {
           daysInMonth={daysInMonth}
           getRecord={getRecord}
           updateRecord={updateRecord}
+          addJustification={addJustification}
           getTotals={getTotals}
           currentUserRole={currentUserRole}
           supervisorName={currentSupervisor?.name}
