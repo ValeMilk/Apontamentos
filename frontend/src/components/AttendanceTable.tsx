@@ -79,6 +79,11 @@ export function AttendanceTable({
     setJustModal(null);
     setJustText('');
   }
+
+  function handleJustModalCancel() {
+    setJustModal(null);
+    setJustText('');
+  }
   // calcular largura mínima da tabela dinamicamente: larguras fixas das colunas iniciais + colunas de dias
   const fixedColsWidth = 220 + 100 + 40; // largura aproximada das 3 colunas fixas (FUNC, FUNÇÃO, APT/SUP)
   const dayColWidth = 36; // largura por dia (inclui padding/margem)
@@ -147,11 +152,20 @@ export function AttendanceTable({
       {justModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="bg-[#0059A0] px-6 py-4">
-              <h2 className="text-white font-bold text-base">Justificativa de Abono</h2>
-              <p className="text-white/70 text-xs mt-0.5">
-                {justModal.code} — {justModal.employeeName.toUpperCase()} — {format(new Date(justModal.day + 'T12:00:00'), 'dd/MM/yyyy')}
-              </p>
+            <div className="bg-[#0059A0] px-6 py-4 flex items-start justify-between">
+              <div>
+                <h2 className="text-white font-bold text-base">Justificativa de Abono</h2>
+                <p className="text-white/70 text-xs mt-0.5">
+                  {justModal.code} — {justModal.employeeName.toUpperCase()} — {format(new Date(justModal.day + 'T12:00:00'), 'dd/MM/yyyy')}
+                </p>
+              </div>
+              <button
+                onClick={handleJustModalCancel}
+                className="text-white/70 hover:text-white transition-colors ml-4 mt-0.5"
+                title="Cancelar"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div>
@@ -160,7 +174,7 @@ export function AttendanceTable({
                   ref={justTextRef}
                   value={justText}
                   onChange={e => setJustText(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (justText.trim()) handleJustModalConfirm(); } }}
+                  onKeyDown={e => { if (e.key === 'Escape') { handleJustModalCancel(); } else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (justText.trim()) handleJustModalConfirm(); } }}
                   placeholder="Digite a justificativa..."
                   rows={3}
                   className="mt-1.5 w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm resize-none transition-all focus:outline-none focus:border-[#0059A0] focus:bg-white focus:ring-4 focus:ring-[#0059A0]/10"
