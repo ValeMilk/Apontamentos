@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Employee, DayInfo, AttendanceRecord, AttendanceCode } from '@/types/attendance';
 import { AttendanceCell } from './AttendanceCell';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 interface AttendanceTableProps {
   employees: Employee[];
@@ -27,6 +28,12 @@ interface JustificationModal {
   employeeName: string;
 }
 
+interface AtestadoModal {
+  employeeId: string;
+  day: string;
+  employeeName: string;
+}
+
 export function AttendanceTable({
   employees,
   daysInMonth,
@@ -42,10 +49,18 @@ export function AttendanceTable({
   onSave,
   isMonthLocked = false,
 }: AttendanceTableProps) {
+  const { accessToken } = useAuth();
   const [bulkCodeByDay, setBulkCodeByDay] = useState<Record<string, string>>({});
   const [justModal, setJustModal] = useState<JustificationModal | null>(null);
   const [justText, setJustText] = useState('');
   const justTextRef = useRef<HTMLTextAreaElement>(null);
+  // Atestado (AT) modal state
+  const [atModal, setAtModal] = useState<AtestadoModal | null>(null);
+  const [atFile, setAtFile] = useState<File | null>(null);
+  const [atText, setAtText] = useState('');
+  const [atUploading, setAtUploading] = useState(false);
+  const [atError, setAtError] = useState('');
+  const atFileRef = useRef<HTMLInputElement>(null);
   const isAdmin = currentUserRole === 'admin';
   const isSupervisor = currentUserRole === 'supervisor' || currentUserRole === 'gerente';
   const isEditDisabled = isSupervisor && isMonthLocked;
@@ -53,7 +68,14 @@ export function AttendanceTable({
   const ABONO_CODES: AttendanceCode[] = ['ABF', 'ABT'];
 
   function handleSupervisorChange(employeeId: string, day: string, value: AttendanceCode, employeeName: string) {
-    if (ABONO_CODES.includes(value) && addJustification) {
+    if (value === 'AT') {
+      // AT requires mandatory atestado file upload
+      setAtFile(null);
+      setAtText('');
+      setAtError('');
+      setAtModal({ employeeId, day, employeeName });
+      setTimeout(() => atFileRef.current?.click(), 150);
+    } else if (ABONO_CODES.includes(value) && addJustification) {
       // Abrir modal de justificativa
       setJustText('');
       setJustModal({ employeeId, day, code: value, employeeName });
@@ -83,6 +105,47 @@ export function AttendanceTable({
   function handleJustModalCancel() {
     setJustModal(null);
     setJustText('');
+  }
+
+  async function handleAtModalConfirm() {
+    if (!atModal || !atFile) return;
+    setAtUploading(true);
+    setAtError('');
+    try {
+      const formData = new FormData();
+      formData.append('atestado', atFile);
+      formData.append('employeeId', atModal.employeeId);
+      formData.append('day', atModal.day);
+      formData.append('text', atText.trim() || `Atestado — ${atModal.day}`);
+
+      const res = await fetch('/api/attendance/upload-atestado', {
+        method: 'POST',
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Falha ao enviar arquivo');
+      }
+
+      // Apply AT to the supervisor record
+      updateRecord(atModal.employeeId, atModal.day, 'supervisor', 'AT');
+      setAtModal(null);
+      setAtFile(null);
+      setAtText('');
+    } catch (e: any) {
+      setAtError(e.message || 'Erro ao enviar atestado');
+    } finally {
+      setAtUploading(false);
+    }
+  }
+
+  function handleAtModalCancel() {
+    setAtModal(null);
+    setAtFile(null);
+    setAtText('');
+    setAtError('');
   }
   // calcular largura mínima da tabela dinamicamente: larguras fixas das colunas iniciais + colunas de dias
   const fixedColsWidth = 220 + 100 + 40; // largura aproximada das 3 colunas fixas (FUNC, FUNÇÃO, APT/SUP)
@@ -194,6 +257,105 @@ export function AttendanceTable({
                   className="flex-1 h-10 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold rounded-xl text-sm transition-all"
                 >
                   Aplicar sem justificativa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de upload de Atestado (AT) */}
+      {atModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="bg-emerald-700 px-6 py-4 flex items-start justify-between">
+              <div>
+                <h2 className="text-white font-bold text-base">Atestado Médico</h2>
+                <p className="text-white/70 text-xs mt-0.5">
+                  AT — {atModal.employeeName.toUpperCase()} — {format(new Date(atModal.day + 'T12:00:00'), 'dd/MM/yyyy')}
+                </p>
+              </div>
+              <button
+                onClick={handleAtModalCancel}
+                className="text-white/70 hover:text-white transition-colors ml-4 mt-0.5"
+                title="Cancelar"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {/* Hidden file input */}
+              <input
+                ref={atFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                capture="environment"
+                className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0] || null;
+                  setAtFile(f);
+                  setAtError('');
+                }}
+              />
+              {/* File upload area */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Foto / Arquivo do Atestado <span className="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => atFileRef.current?.click()}
+                  className={cn(
+                    "mt-1.5 w-full rounded-xl border-2 border-dashed px-4 py-6 text-sm transition-all focus:outline-none text-center",
+                    atFile
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 bg-gray-50 text-gray-500 hover:border-emerald-400 hover:bg-emerald-50"
+                  )}
+                >
+                  {atFile ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-2xl">{atFile.type.startsWith('image/') ? '🖼️' : '📄'}</span>
+                      <span className="font-medium">{atFile.name}</span>
+                      <span className="text-xs text-gray-400">{(atFile.size / 1024).toFixed(0)} KB — clique para trocar</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-2xl">📷</span>
+                      <span className="font-medium">Tirar foto ou selecionar arquivo</span>
+                      <span className="text-xs text-gray-400">JPG, PNG, PDF • máx. 5MB</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+              {/* Optional notes */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Observação (opcional)</label>
+                <input
+                  type="text"
+                  value={atText}
+                  onChange={e => setAtText(e.target.value)}
+                  placeholder="Ex: Atestado de 2 dias, Dr. João..."
+                  className="mt-1.5 w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                />
+              </div>
+              {atError && (
+                <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{atError}</p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAtModalConfirm}
+                  disabled={!atFile || atUploading}
+                  className="flex-1 h-10 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {atUploading ? (
+                    <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enviando...</>
+                  ) : 'Confirmar AT'}
+                </button>
+                <button
+                  onClick={handleAtModalCancel}
+                  disabled={atUploading}
+                  className="flex-1 h-10 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 font-semibold rounded-xl text-sm transition-all disabled:opacity-40"
+                >
+                  Cancelar
                 </button>
               </div>
             </div>

@@ -5,6 +5,7 @@ const justificationSchema = new mongoose.Schema({
   supervisorId: { type: String, index: true }, // Denormalized from employeeId prefix for fast filtering
   day: { type: String, required: true, index: true },
   text: { type: String, required: true },
+  attestFile: { type: String, default: null }, // Path to uploaded AT file, e.g. "atestados/uuid.jpg"
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 

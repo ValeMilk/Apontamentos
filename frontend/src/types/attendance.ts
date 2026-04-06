@@ -29,6 +29,7 @@ export interface Justification {
   employeeId: string;
   day: string; // ISO date YYYY-MM-DD
   text: string;
+  attestFile?: string; // path like "atestados/uuid.jpg", served at /uploads/atestados/uuid.jpg
 }
 
 export interface DayInfo {

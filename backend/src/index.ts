@@ -19,6 +19,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded atestado files statically
+const UPLOADS_DIR = '/app/uploads';
+try { fs.mkdirSync(UPLOADS_DIR + '/atestados', { recursive: true }); } catch (_) {}
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Serve uploaded atestado files statically
+const UPLOADS_DIR = '/app/uploads';
+try { fs.mkdirSync(UPLOADS_DIR + '/atestados', { recursive: true }); } catch (_) {}
+app.use('/uploads', express.static(UPLOADS_DIR));
+
 // Routes
 app.get('/', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);

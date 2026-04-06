@@ -16,6 +16,8 @@ services:
       - MONGODB_URI=${MONGODB_URI}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+    volumes:
+      - uploads_data:/app/uploads
     networks:
       - attendance-network
     healthcheck:
@@ -48,3 +50,6 @@ services:
 networks:
   attendance-network:
     driver: bridge
+
+volumes:
+  uploads_data:

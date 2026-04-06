@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Paperclip } from 'lucide-react';
 
 interface JustificationsSectionProps {
   justifications: Justification[];
@@ -136,6 +136,7 @@ export function JustificationsSection({
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground w-[250px]">FUNCIONÁRIO</th>
                   <th className="text-center px-3 py-2 font-medium text-muted-foreground w-[80px]">DIA</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground">JUSTIFICATIVA DA FALTA ABONADA</th>
+                  <th className="w-[40px]"></th>
                   <th className="w-[60px]"></th>
                 </tr>
               </thead>
@@ -145,6 +146,19 @@ export function JustificationsSection({
                     <td className="px-3 py-2 font-medium uppercase">{getEmployeeName(just.employeeId)}</td>
                     <td className="px-3 py-2 text-center">{just.day}</td>
                     <td className="px-3 py-2">{just.text}</td>
+                    <td className="px-2 py-2 text-center">
+                      {just.attestFile && (
+                        <a
+                          href={`/uploads/${just.attestFile}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Ver atestado"
+                          className="inline-flex items-center justify-center text-emerald-700 hover:text-emerald-900"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </a>
+                      )}
+                    </td>
                     <td className="px-2 py-2">
                       {currentUserRole !== 'expectador' && (
                         <Button

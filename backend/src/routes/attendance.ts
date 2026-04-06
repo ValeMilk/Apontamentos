@@ -7,6 +7,7 @@ import { Employee } from '../models/Employee.js';
 import { MonthStatus } from '../models/MonthStatus.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { Types } from 'mongoose';
+import { uploadAtestado } from '../middleware/upload.js';
 
 // simple slug helper
 function slugify(s: string) {
@@ -516,6 +517,71 @@ router.post('/fix-supervisor-ids', authenticateJWT, requireRole(['admin']), asyn
   } catch (e) {
     console.error('Failed to fix supervisorIds', e);
     res.status(500).json({ message: 'Failed to fix supervisorIds' });
+  }
+});
+
+// Upload atestado file for AT justification
+router.post('/upload-atestado', authenticateJWT, uploadAtestado.single('atestado'), async (req: AuthRequest, res) => {
+  try {
+    const role = req.user?.role;
+    if (role === 'expectador') {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Arquivo não enviado' });
+    }
+
+    const { employeeId, day, text } = req.body;
+    if (!employeeId || !day) {
+      return res.status(400).json({ message: 'employeeId e day são obrigatórios' });
+    }
+
+    const filePath = `atestados/${req.file.filename}`;
+    const justText = (text || '').trim() || `Atestado — ${day}`;
+
+    // Infer supervisorId from employeeId
+    const knownSupervisorIds = (
+      await User.find({ role: 'supervisor' }).select('supervisorId').lean()
+    )
+      .map((u: any) => String(u?.supervisorId || '').trim())
+      .filter(Boolean);
+    const supervisorId = inferSupervisorIdFromEmployeeId(employeeId, knownSupervisorIds);
+
+    await Justification.findOneAndUpdate(
+      { employeeId, day },
+      {
+        $set: {
+          text: justText,
+          attestFile: filePath,
+          createdBy: req.userId ? new Types.ObjectId(String(req.userId)) : null,
+          supervisorId,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // Audit log
+    try {
+      const userName = req.user?.name || req.user?.username || '';
+      await AuditLog.create({
+        action: 'justification_create',
+        userId: new Types.ObjectId(String(req.userId)),
+        userName,
+        userRole: role,
+        targetType: 'justification',
+        description: `${userName} anexou atestado de ${employeeId} em ${day}`,
+        details: { employeeId, day, attestFile: filePath },
+      });
+    } catch (_) {}
+
+    res.json({ ok: true, path: filePath });
+  } catch (e: any) {
+    console.error('Failed to upload atestado', e);
+    if (e.message?.includes('Tipo de arquivo')) {
+      return res.status(400).json({ message: e.message });
+    }
+    res.status(500).json({ message: 'Falha ao fazer upload do atestado' });
   }
 });
 

@@ -225,7 +225,7 @@ export function useAttendance() {
         if (justRes.ok) {
           const js = await justRes.json();
           if (!mounted) return;
-          setJustifications(js.map((j: any) => ({ id: j._id || `just-${Date.now()}`, employeeId: j.employeeId, day: j.day, text: j.text })));
+          setJustifications(js.map((j: any) => ({ id: j._id || `just-${Date.now()}`, employeeId: j.employeeId, day: j.day, text: j.text, attestFile: j.attestFile || undefined })));
         }
       } catch (e) {
         // ignore errors (backend may not be available)
@@ -606,7 +606,7 @@ export function useAttendance() {
 
         if (justRes.ok) {
           const js = await justRes.json();
-          setJustifications(js.map((j: any) => ({ id: j._id || `just-${Date.now()}`, employeeId: j.employeeId, day: j.day, text: j.text })));
+          setJustifications(js.map((j: any) => ({ id: j._id || `just-${Date.now()}`, employeeId: j.employeeId, day: j.day, text: j.text, attestFile: j.attestFile || undefined })));
         }
       } catch (e) {
         // ignore refresh errors but keep save success
