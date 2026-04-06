@@ -98,6 +98,15 @@ const Index = () => {
     });
   }, [justifications, filteredEmployees, daysInMonth]);
 
+  // Atestados: filtered only by employee/period presence of attestFile (no text filter)
+  const filteredAtestados = useMemo(() => {
+    const employeeIds = new Set(filteredEmployees.map(e => e.id));
+    const periodDays = new Set(daysInMonth.map(d => d.day));
+    return justifications.filter(j =>
+      j.attestFile && employeeIds.has(j.employeeId) && periodDays.has(j.day)
+    );
+  }, [justifications, filteredEmployees, daysInMonth]);
+
   return (
     <div className="min-h-screen bg-background">
       <AuthSync
@@ -192,7 +201,7 @@ const Index = () => {
         />
 
         <AtestadosSection
-          justifications={filteredJustifications}
+          justifications={filteredAtestados}
           employees={filteredEmployees}
         />
 
