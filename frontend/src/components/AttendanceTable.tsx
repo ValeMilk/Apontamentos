@@ -4,6 +4,8 @@ import { Employee, DayInfo, AttendanceRecord, AttendanceCode } from '@/types/att
 import { AttendanceCell } from './AttendanceCell';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AttendanceTableProps {
   employees: Employee[];
@@ -32,6 +34,33 @@ interface AtestadoModal {
   employeeId: string;
   day: string;
   employeeName: string;
+}
+
+function SaveButton({ onSave }: { onSave: () => Promise<boolean> }) {
+  const [saving, setSaving] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        if (saving) return;
+        setSaving(true);
+        try {
+          const ok = await onSave();
+          if (ok) toast.success('Registros salvos com sucesso');
+          else toast.error('Falha ao salvar registros');
+        } catch (e) {
+          console.error(e);
+          toast.error('Erro ao salvar registros');
+        } finally {
+          setSaving(false);
+        }
+      }}
+      disabled={saving}
+      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md text-sm font-medium shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+      {saving ? 'Salvando...' : 'Salvar'}
+    </button>
+  );
 }
 
 export function AttendanceTable({
@@ -383,19 +412,7 @@ export function AttendanceTable({
             <p className="text-sm text-primary font-medium">{periodLabel}</p>
             {onSave && currentUserRole !== 'expectador' && !isEditDisabled && (
               <div className="mt-2 flex justify-end">
-                <button
-                  onClick={async () => {
-                    try {
-                      (event as any)?.preventDefault?.();
-                      const ok = await onSave();
-                      if (ok) alert('Registros salvos com sucesso');
-                      else alert('Falha ao salvar registros');
-                    } catch (e) { console.error(e); alert('Erro ao salvar'); }
-                  }}
-                  className="px-3 py-1 bg-primary text-white rounded text-sm"
-                >
-                  Salvar
-                </button>
+                <SaveButton onSave={onSave} />
               </div>
             )}
           </div>

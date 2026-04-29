@@ -4,7 +4,8 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Paperclip } from 'lucide-react';
+import { Trash2, Plus, Paperclip, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface JustificationsSectionProps {
   justifications: Justification[];
@@ -31,15 +32,18 @@ export function JustificationsSection({
 
   const handleAdd = () => {
     if (currentUserRole === 'expectador') return;
-    if (newEmployeeId && newDay && newText.trim()) {
-      const willApply = applyToSupervisor;
-      onAdd(newEmployeeId, newDay, newText.trim(), willApply, willApply ? (supervisorCode as any) : undefined);
-      setNewEmployeeId('');
-      setNewDay('');
-      setNewText('');
-      setApplyToSupervisor(false);
-      setSupervisorCode('AT');
+    if (!newEmployeeId || !newDay || !newText.trim()) {
+      toast.error('Preencha funcionário, dia e justificativa');
+      return;
     }
+    const willApply = applyToSupervisor;
+    onAdd(newEmployeeId, newDay, newText.trim(), willApply, willApply ? (supervisorCode as any) : undefined);
+    toast.success('Justificativa adicionada');
+    setNewEmployeeId('');
+    setNewDay('');
+    setNewText('');
+    setApplyToSupervisor(false);
+    setSupervisorCode('AT');
   };
 
   const getEmployeeName = (id: string) => {
@@ -47,8 +51,9 @@ export function JustificationsSection({
   };
 
   return (
-    <div className="mt-8 border border-border rounded-lg overflow-hidden">
-      <div className="table-header-cell px-4 py-3">
+    <div className="mt-8 border border-border rounded-lg overflow-hidden shadow-sm">
+      <div className="table-header-cell px-4 py-3 flex items-center gap-2">
+        <FileText className="w-4 h-4" />
         <h3 className="font-semibold text-sm">JUSTIFICATIVA DA FALTA ABONADA</h3>
       </div>
 
@@ -164,8 +169,14 @@ export function JustificationsSection({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onRemove(just.id)}
-                          className="h-7 w-7 text-destructive hover:text-destructive/80"
+                          onClick={() => {
+                            if (window.confirm('Remover esta justificativa?')) {
+                              onRemove(just.id);
+                              toast.success('Justificativa removida');
+                            }
+                          }}
+                          className="h-7 w-7 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                          title="Remover"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -177,7 +188,8 @@ export function JustificationsSection({
             </table>
           </div>
         ) : (
-          <p className="text-center text-muted-foreground py-4 text-sm">
+          <p className="text-center text-muted-foreground py-6 text-sm flex flex-col items-center gap-2">
+            <FileText className="w-8 h-8 opacity-30" />
             Nenhuma justificativa cadastrada
           </p>
         )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Justification, Employee } from '@/types/attendance';
-import { FileText, Image, ExternalLink } from 'lucide-react';
+import { FileText, Image as ImageIcon, ExternalLink, Stethoscope } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface AtestadosSectionProps {
   justifications: Justification[];
@@ -22,9 +23,15 @@ export function AtestadosSection({ justifications, employees }: AtestadosSection
   const url = (path: string) => `/uploads/${path}`;
 
   return (
-    <div className="mt-6 border border-border rounded-lg overflow-hidden">
-      <div className="table-header-cell px-4 py-3">
-        <h3 className="font-semibold text-sm">ATESTADOS ENVIADOS</h3>
+    <div className="mt-6 border border-border rounded-lg overflow-hidden shadow-sm">
+      <div className="table-header-cell px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Stethoscope className="w-4 h-4" />
+          <h3 className="font-semibold text-sm">ATESTADOS ENVIADOS</h3>
+        </div>
+        <Badge variant="secondary" className="text-xs">
+          {atestados.length} {atestados.length === 1 ? 'atestado' : 'atestados'}
+        </Badge>
       </div>
 
       <div className="p-4">
@@ -55,9 +62,9 @@ export function AtestadosSection({ justifications, employees }: AtestadosSection
                       <span className="text-xs">PDF</span>
                     </div>
                   )}
-                  <div className="absolute top-1 right-1 bg-black/40 rounded p-0.5">
+                  <div className="absolute top-1 right-1 bg-black/50 backdrop-blur-sm rounded-full p-1">
                     {img ? (
-                      <Image className="w-3.5 h-3.5 text-white" />
+                      <ImageIcon className="w-3.5 h-3.5 text-white" />
                     ) : (
                       <ExternalLink className="w-3.5 h-3.5 text-white" />
                     )}

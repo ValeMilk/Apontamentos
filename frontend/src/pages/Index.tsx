@@ -10,6 +10,7 @@ import { AtestadosSection } from '@/components/AtestadosSection';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useMemo } from 'react';
+import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2 } from 'lucide-react';
 
 // AuthSync extracted outside Index to prevent re-mounting on every render
 function AuthSync({
@@ -116,38 +117,46 @@ const Index = () => {
       />
       {/* Page Header */}
       <header className="bg-primary text-primary-foreground py-4 px-6 shadow-lg">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Sistema de Apontamento de Presença</h1>
-            <p className="text-sm text-primary-foreground/80">Gestão de frequência de funcionários</p>
-          </div>
+        <div className="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
+            <div className="bg-primary-foreground/10 rounded-lg p-2">
+              <ClipboardList className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Sistema de Apontamento de Presença</h1>
+              <p className="text-sm text-primary-foreground/80">Gestão de frequência de funcionários</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
             {(user?.role === 'admin' || user?.role === 'gerente') && (
               <Link
                 to="/admin/usuarios"
-                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium"
+                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
               >
-                Central de Usuários
+                <UserCog className="w-4 h-4" />
+                Usuários
               </Link>
             )}
             {(user?.role === 'admin' || user?.role === 'gerente') && (
               <Link
                 to="/exportacao"
-                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium"
+                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
               >
-                📊 Exportação
+                <FileBarChart2 className="w-4 h-4" />
+                Exportação
               </Link>
             )}
             {user?.role === 'admin' && (
               <Link
                 to="/admin/logs"
-                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium"
+                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
               >
-                📋 Logs
+                <ScrollText className="w-4 h-4" />
+                Logs
               </Link>
             )}
-            <div className="text-sm bg-primary-foreground/10 px-3 py-1.5 rounded-lg">
-              <span className="text-primary-foreground/70">Usuário:</span>{' '}
+            <div className="text-sm bg-primary-foreground/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
+              <UserCircle2 className="w-4 h-4 text-primary-foreground/80" />
               <span className="font-semibold">
                 {currentUserRole === 'admin' ? 'Administrador' : currentUserRole === 'gerente' ? 'Gerente' : currentUserRole === 'expectador' ? 'Expectador' : currentSupervisor?.name || 'Supervisor'}
               </span>
@@ -209,9 +218,13 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-muted border-t border-border py-4 px-6 mt-8">
-        <div className="max-w-[1800px] mx-auto text-center text-sm text-muted-foreground">
-          Sistema de Apontamento de Presença © {new Date().getFullYear()}
+      <footer className="bg-card border-t border-border py-6 px-6 mt-8">
+        <div className="max-w-[1800px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" />
+            <span>Sistema de Apontamento de Presença</span>
+          </div>
+          <span className="text-xs">© {new Date().getFullYear()} — Todos os direitos reservados</span>
         </div>
       </footer>
     </div>
