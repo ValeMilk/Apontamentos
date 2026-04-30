@@ -9,8 +9,35 @@ import { JustificationsSection } from '@/components/JustificationsSection';
 import { AtestadosSection } from '@/components/AtestadosSection';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useEffect, useMemo } from 'react';
-import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2, Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+function SaveHeaderButton({ onSave }: { onSave: () => Promise<boolean> }) {
+  const [saving, setSaving] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        if (saving) return;
+        setSaving(true);
+        try {
+          const ok = await onSave();
+          if (ok) toast.success('Registros salvos com sucesso');
+          else toast.error('Falha ao salvar registros');
+        } catch {
+          toast.error('Erro ao salvar registros');
+        } finally {
+          setSaving(false);
+        }
+      }}
+      disabled={saving}
+      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed border border-primary-foreground/20"
+    >
+      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+      {saving ? 'Salvando...' : 'Salvar'}
+    </button>
+  );
+}
 
 // AuthSync extracted outside Index to prevent re-mounting on every render
 function AuthSync({
@@ -135,7 +162,7 @@ const Index = () => {
         setSelectedSupervisor={setSelectedSupervisor}
       />
       {/* Page Header */}
-      <header className="bg-primary text-primary-foreground py-4 px-6 shadow-lg">
+      <header className="bg-primary text-primary-foreground py-4 px-6 shadow-lg sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="bg-primary-foreground/10 rounded-lg p-2">
@@ -173,6 +200,9 @@ const Index = () => {
                 <ScrollText className="w-4 h-4" />
                 Logs
               </Link>
+            )}
+            {currentUserRole !== 'expectador' && !isMonthLocked && (
+              <SaveHeaderButton onSave={saveAll} />
             )}
             <div className="text-sm bg-primary-foreground/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
               <UserCircle2 className="w-4 h-4 text-primary-foreground/80" />
