@@ -59,8 +59,8 @@ export const AttendanceCell = memo(function AttendanceCell({
   isAtPending = false,
   onRequestAtUpload,
 }: AttendanceCellProps) {
-  // Apenas domingos continuam automáticos/bloqueados. Feriados agora são opcionais (marcados pelo botão).
-  const isBlocked = dayInfo.isSunday || isDisabled;
+  // Apenas domingos são bloqueados visualmente. Mês bloqueado (isDisabled) apenas torna read-only.
+  const isBlocked = dayInfo.isSunday;
   const displayLabel = dayInfo.isSunday ? 'DOM' : '';
 
   if (isBlocked) {
@@ -86,8 +86,8 @@ export const AttendanceCell = memo(function AttendanceCell({
   const apontadorBlank = apontadorValue === '';
   const canJustify = !apontadorBlank || supervisorValue !== '';
 
-  const apontadorEditable = currentUserRole === 'admin';
-  const supervisorEditable = currentUserRole === 'admin' || currentUserRole === 'supervisor';
+  const apontadorEditable = currentUserRole === 'admin' && !isDisabled;
+  const supervisorEditable = (currentUserRole === 'admin' || currentUserRole === 'supervisor') && !isDisabled;
 
   return (
     <div className="flex flex-col gap-px h-full">
