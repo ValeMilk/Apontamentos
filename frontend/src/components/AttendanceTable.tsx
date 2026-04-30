@@ -239,7 +239,7 @@ export function AttendanceTable({
   }, []);
 
   return (
-    <div style={{ overflowX: 'auto', width: '100%' }}>
+    <div style={{ overflow: 'auto', width: '100%', maxHeight: 'calc(100vh - 280px)' }}>
       {/* Modal de justificativa para ABF/ABT */}
       {justModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -421,7 +421,7 @@ export function AttendanceTable({
         {/* Table */}
         <div className="border border-border rounded-lg">
           <table className="w-full border-collapse text-xs">
-            <thead>
+            <thead className="sticky top-0 z-20">
               <tr>
                 <th className="table-header-cell border-r border-border/30 px-2 py-2 text-left w-[220px] sticky left-0 z-10">
                   FUNCIONÁRIOS
