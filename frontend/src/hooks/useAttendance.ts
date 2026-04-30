@@ -561,8 +561,11 @@ export function useAttendance() {
   // Save records + justifications to backend
   const saveAll = useCallback(async () => {
     try {
-      const recordsToSave = dirtyRecordKeys.size > 0
-        ? records.filter((r) => dirtyRecordKeys.has(makeRecordKey(r.employeeId, r.day)))
+      // Snapshot das chaves sujas no início — apenas estas serão limpas no final.
+      // Edições novas do usuário durante o save são preservadas.
+      const savingKeys = new Set(dirtyRecordKeys);
+      const recordsToSave = savingKeys.size > 0
+        ? records.filter((r) => savingKeys.has(makeRecordKey(r.employeeId, r.day)))
         : [];
 
       // DEBUG: log payload to help diagnose save failures in browser
@@ -601,34 +604,24 @@ export function useAttendance() {
         if (!jres.ok) throw new Error('Failed to save justifications');
       }
 
-      // Refresh local state from backend so UI reflects canonical saved data
-      // Use Promise.all to parallelize the 2 refresh GETs
-      try {
-        const [attRes, justRes] = await Promise.all([
-          fetch('/api/attendance', {
-            headers: { Authorization: accessToken ? `Bearer ${accessToken}` : '' },
-          }),
-          fetch('/api/attendance/justifications', {
-            headers: { Authorization: accessToken ? `Bearer ${accessToken}` : '' },
-          }),
-        ]);
+      // Atualizar IDs reais das justificativas usando a resposta do POST acima — sem
+      // refazer GET (evita sobrescrever edições recentes do usuário durante o save).
+      // O GET completo continua acontecendo no load Effect quando hasUnsavedChanges === false.
 
-        if (attRes.ok) {
-          const att = await attRes.json();
-          setRecords(att.map((r: any) => ({ employeeId: r.employeeId, day: r.day, apontador: r.apontador, supervisor: r.supervisor })));
+      // Limpa apenas as chaves que ENTRARAM no save (preserva edições novas)
+      setDirtyRecordKeys(prev => {
+        if (prev.size === 0) return prev;
+        const next = new Set<string>();
+        for (const k of prev) if (!savingKeys.has(k)) next.add(k);
+        return next;
+      });
+      // hasUnsavedChanges só vira false se não houver chaves sujas remanescentes
+      setDirtyRecordKeys(prev => {
+        if (prev.size === 0) {
+          setHasUnsavedChanges(false);
         }
-
-        if (justRes.ok) {
-          const js = await justRes.json();
-          setJustifications(js.map((j: any) => ({ id: j._id || `just-${Date.now()}`, employeeId: j.employeeId, day: j.day, text: j.text, attestFile: j.attestFile || undefined })));
-        }
-      } catch (e) {
-        // ignore refresh errors but keep save success
-        console.warn('Saved but failed to refresh local state', e);
-      }
-
-      setHasUnsavedChanges(false);
-      setDirtyRecordKeys(new Set());
+        return prev;
+      });
 
       return true;
     } catch (e) {

@@ -162,6 +162,13 @@ const Index = () => {
   // Autosave: salva automaticamente após pequeno debounce quando houver alterações
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const savedTimeoutRef = useRef<number | null>(null);
+  // Mantemos saveAll em ref para o effect de autosave NÃO ser reagendado a cada
+  // mudança de records (saveAll muda de referência sempre que records muda).
+  const saveAllRef = useRef(saveAll);
+  useEffect(() => {
+    saveAllRef.current = saveAll;
+  }, [saveAll]);
+
   useEffect(() => {
     if (!hasUnsavedChanges) return;
     if (currentUserRole === 'expectador') return;
@@ -169,7 +176,7 @@ const Index = () => {
     const t = window.setTimeout(async () => {
       setSaveStatus('saving');
       try {
-        const ok = await saveAll();
+        const ok = await saveAllRef.current();
         if (ok) {
           setSaveStatus('saved');
           if (savedTimeoutRef.current) window.clearTimeout(savedTimeoutRef.current);
@@ -178,13 +185,14 @@ const Index = () => {
           setSaveStatus('error');
           toast.error('Falha ao salvar automaticamente');
         }
-      } catch {
+      } catch (e) {
+        console.error('[autosave] error', e);
         setSaveStatus('error');
         toast.error('Erro ao salvar automaticamente');
       }
     }, 1000);
     return () => window.clearTimeout(t);
-  }, [hasUnsavedChanges, saveAll, currentUserRole, isMonthLocked]);
+  }, [hasUnsavedChanges, currentUserRole, isMonthLocked]);
 
   return (
     <div className="min-h-screen bg-background">
