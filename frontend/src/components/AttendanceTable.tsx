@@ -20,6 +20,7 @@ interface AttendanceTableProps {
   storeName?: string;
   periodLabel: string;
   onSave?: () => Promise<boolean>;
+  flushAutosave?: () => Promise<boolean>;
   isMonthLocked?: boolean;
   pendingAtKeys?: Set<string>;
 }
@@ -80,6 +81,7 @@ export function AttendanceTable({
   storeName,
   periodLabel,
   onSave,
+  flushAutosave,
   isMonthLocked = false,
   pendingAtKeys,
 }: AttendanceTableProps) {
@@ -126,6 +128,12 @@ export function AttendanceTable({
     }
     setJustModal(null);
     setJustText('');
+    // Garantir persistência imediata (não esperar debounce do autosave)
+    if (flushAutosave) {
+      void flushAutosave().then((ok) => {
+        if (!ok) toast.error('Falha ao salvar lançamento');
+      });
+    }
   }
 
   function handleJustModalSkip() {
@@ -133,6 +141,11 @@ export function AttendanceTable({
     updateRecord(justModal.employeeId, justModal.day, 'supervisor', justModal.code);
     setJustModal(null);
     setJustText('');
+    if (flushAutosave) {
+      void flushAutosave().then((ok) => {
+        if (!ok) toast.error('Falha ao salvar lançamento');
+      });
+    }
   }
 
   function handleJustModalCancel() {

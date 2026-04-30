@@ -98,6 +98,7 @@ const Index = () => {
     hasUnsavedChanges,
     autosaveStatus,
     setAutosavePaused,
+    flushAutosave,
   } = useAttendance();
 
   // Extract month in YYYY-MM format from currentDate
@@ -166,6 +167,23 @@ const Index = () => {
   useEffect(() => {
     setAutosavePaused(currentUserRole === 'expectador' || isMonthLocked);
   }, [currentUserRole, isMonthLocked, setAutosavePaused]);
+
+  // Garantir flush do autosave antes de fechar/recarregar a página.
+  // sendBeacon não funciona bem com auth header customizado, então usamos
+  // navigator.sendBeacon? Não — preferimos avisar o usuário via beforeunload
+  // quando há alterações não salvas e disparar flush síncrono.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        // Dispara flush (não bloqueante, mas começa o request antes do unload)
+        try { void flushAutosave(); } catch (_) {}
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges, flushAutosave]);
 
   // Toast em caso de erro de autosave
   const lastErrorRef = useRef<AutosaveStatus>('idle');
@@ -268,6 +286,7 @@ const Index = () => {
           storeName={currentSupervisor?.store}
           periodLabel={periodLabel}
           onSave={saveAll}
+          flushAutosave={flushAutosave}
           isMonthLocked={isMonthLocked}
           pendingAtKeys={pendingAtKeys}
         />

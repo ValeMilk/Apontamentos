@@ -301,6 +301,40 @@ export function useAttendance() {
   }, []);
   useEffect(() => { triggerAutosaveRef.current = triggerAutosave; }, [triggerAutosave]);
 
+  // Força salvamento imediato: cancela debounce e aguarda saveAll completar.
+  // Usado quando precisamos garantir persistência (ex.: confirmar modal de justificativa,
+  // beforeunload, troca de role/usuário).
+  const flushAutosave = useCallback(async (): Promise<boolean> => {
+    if (autosavePausedRef.current) return true;
+    if (autosaveTimerRef.current != null) {
+      window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+    // Se já há um save em andamento, espera ele terminar antes de disparar outro.
+    while (isSavingRef.current) {
+      await new Promise((r) => window.setTimeout(r, 50));
+    }
+    isSavingRef.current = true;
+    setAutosaveStatus('saving');
+    try {
+      const ok = await saveAllRef.current();
+      if (ok) {
+        setAutosaveStatus('saved');
+        if (savedFlashTimeoutRef.current) window.clearTimeout(savedFlashTimeoutRef.current);
+        savedFlashTimeoutRef.current = window.setTimeout(() => setAutosaveStatus('idle'), 2000);
+      } else {
+        setAutosaveStatus('error');
+      }
+      return !!ok;
+    } catch (e) {
+      console.error('[flushAutosave] erro', e);
+      setAutosaveStatus('error');
+      return false;
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, []);
+
   const updateRecord = useCallback((
     employeeId: string,
     day: string,
@@ -721,6 +755,7 @@ export function useAttendance() {
     hasUnsavedChanges,
     autosaveStatus,
     setAutosavePaused,
+    flushAutosave,
   };
 }
 
