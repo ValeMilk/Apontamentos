@@ -31,6 +31,11 @@ export function useAttendance() {
   const pendingAfterSaveRef = useRef(false);
   const saveAllRef = useRef<() => Promise<boolean>>(async () => false);
   const autosavePausedRef = useRef(false);
+  // Refs sincronos com state — usados por saveAll para evitar leitura stale
+  // quando flushAutosave roda imediatamente após updateRecord (antes do React commitar).
+  const recordsRef = useRef<AttendanceRecord[]>([]);
+  const dirtyRecordKeysRef = useRef<Set<string>>(new Set());
+  const justificationsRef = useRef<Justification[]>([]);
 
   // helper to slugify names for stable ids
   const slug = (s: string) => s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
@@ -342,12 +347,46 @@ export function useAttendance() {
     value: AttendanceCode
   ) => {
     const key = makeRecordKey(employeeId, day);
+    // Atualiza ref síncrono ANTES do setState — flushAutosave pode rodar antes do commit
+    {
+      const next = new Set(dirtyRecordKeysRef.current);
+      next.add(key);
+      dirtyRecordKeysRef.current = next;
+    }
     setDirtyRecordKeys(prev => {
       const next = new Set(prev);
       next.add(key);
       return next;
     });
     setHasUnsavedChanges(true);
+    // Atualiza records ref síncronamente
+    {
+      const JUST_CODES_TO_PREFILL: AttendanceCode[] = ['AT', 'ABF', 'ABT'];
+      const prev = recordsRef.current;
+      const existingIndex = new Map<string, number>();
+      for (let i = 0; i < prev.length; i++) {
+        existingIndex.set(makeRecordKey(prev[i].employeeId, prev[i].day), i);
+      }
+      const idx = existingIndex.get(key);
+      let nextRecords: AttendanceRecord[];
+      if (idx !== undefined) {
+        nextRecords = [...prev];
+        const existing = nextRecords[idx];
+        if (field === 'apontador') {
+          const supervisorVal = JUST_CODES_TO_PREFILL.includes(existing.supervisor as AttendanceCode)
+            ? existing.supervisor
+            : value;
+          nextRecords[idx] = { ...existing, apontador: value, supervisor: supervisorVal };
+        } else {
+          nextRecords[idx] = { ...existing, [field]: value };
+        }
+      } else if (field === 'apontador') {
+        nextRecords = [...prev, { employeeId, day, apontador: value, supervisor: value }];
+      } else {
+        nextRecords = [...prev, { employeeId, day, apontador: '', supervisor: value }];
+      }
+      recordsRef.current = nextRecords;
+    }
     setRecords(prev => {
       const JUST_CODES_TO_PREFILL: AttendanceCode[] = ['AT', 'ABF', 'ABT'];
       // Use a map lookup for O(1) instead of findIndex O(N)
@@ -392,14 +431,22 @@ export function useAttendance() {
 
       setJustifications((prev) => {
         const exists = prev.some((j) => j.employeeId === employeeId && j.day === day);
-        if (exists) return prev;
-        return [{ id: `just-${Date.now()}`, employeeId, day, text: placeholder }, ...prev];
+        if (exists) {
+          justificationsRef.current = prev;
+          return prev;
+        }
+        const next = [{ id: `just-${Date.now()}`, employeeId, day, text: placeholder }, ...prev];
+        justificationsRef.current = next;
+        return next;
       });
     } else if (field === 'supervisor' && !JUST_CODES_TO_PREFILL.includes(value as AttendanceCode)) {
       // Código mudou PARA não-justificativa (P, F, '', FOLGA etc.) — remover justificativa local e no servidor
       setJustifications(prev => {
         const toRemove = prev.find(j => j.employeeId === employeeId && j.day === day);
-        if (!toRemove) return prev;
+        if (!toRemove) {
+          justificationsRef.current = prev;
+          return prev;
+        }
         if (accessToken) {
           void fetch('/api/attendance/justifications', {
             method: 'DELETE',
@@ -407,7 +454,9 @@ export function useAttendance() {
             body: JSON.stringify({ id: toRemove.id, employeeId, day }),
           }).catch(() => {});
         }
-        return prev.filter(j => !(j.employeeId === employeeId && j.day === day));
+        const next = prev.filter(j => !(j.employeeId === employeeId && j.day === day));
+        justificationsRef.current = next;
+        return next;
       });
     }
     triggerAutosave();
@@ -647,11 +696,16 @@ export function useAttendance() {
   // Save records + justifications to backend
   const saveAll = useCallback(async () => {
     try {
+      // Lê dos refs (síncronos com updateRecord) — evita stale closure quando
+      // flushAutosave é invocado imediatamente após updateRecord.
+      const currentRecords = recordsRef.current;
+      const currentDirty = dirtyRecordKeysRef.current;
+      const currentJustifications = justificationsRef.current;
       // Snapshot das chaves sujas no início — apenas estas serão limpas no final.
       // Edições novas do usuário durante o save são preservadas.
-      const savingKeys = new Set(dirtyRecordKeys);
+      const savingKeys = new Set(currentDirty);
       const recordsToSave = savingKeys.size > 0
-        ? records.filter((r) => savingKeys.has(makeRecordKey(r.employeeId, r.day)))
+        ? currentRecords.filter((r) => savingKeys.has(makeRecordKey(r.employeeId, r.day)))
         : [];
 
       // DEBUG: log payload to help diagnose save failures in browser
@@ -681,11 +735,11 @@ export function useAttendance() {
         }
       }
 
-      if (justifications.length > 0) {
+      if (currentJustifications.length > 0) {
         const jres = await fetch('/api/attendance/justifications', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: accessToken ? `Bearer ${accessToken}` : '' },
-          body: JSON.stringify({ justifications }),
+          body: JSON.stringify({ justifications: currentJustifications }),
         });
         if (!jres.ok) throw new Error('Failed to save justifications');
       }
@@ -695,6 +749,12 @@ export function useAttendance() {
       // O GET completo continua acontecendo no load Effect quando hasUnsavedChanges === false.
 
       // Limpa apenas as chaves que ENTRARAM no save (preserva edições novas)
+      // Atualiza ref síncronamente também
+      {
+        const refNext = new Set<string>();
+        for (const k of dirtyRecordKeysRef.current) if (!savingKeys.has(k)) refNext.add(k);
+        dirtyRecordKeysRef.current = refNext;
+      }
       setDirtyRecordKeys(prev => {
         if (prev.size === 0) return prev;
         const next = new Set<string>();
@@ -714,10 +774,16 @@ export function useAttendance() {
       console.error('Failed to save attendance', e);
       return false;
     }
-  }, [records, justifications, accessToken, dirtyRecordKeys, employeesById]);
+  }, [accessToken, employeesById]);
 
   // Sincronizar saveAll mais recente no ref usado pelo autosave
   useEffect(() => { saveAllRef.current = saveAll; }, [saveAll]);
+
+  // Mantém refs sincronizados com state (para casos onde state muda fora de updateRecord:
+  // load inicial, addJustification, editJustification, deleteJustification, etc.)
+  useEffect(() => { recordsRef.current = records; }, [records]);
+  useEffect(() => { dirtyRecordKeysRef.current = dirtyRecordKeys; }, [dirtyRecordKeys]);
+  useEffect(() => { justificationsRef.current = justifications; }, [justifications]);
 
   // Permitir ao consumidor pausar/retomar autosave (ex.: m\u00eas bloqueado, expectador)
   const setAutosavePaused = useCallback((paused: boolean) => {
