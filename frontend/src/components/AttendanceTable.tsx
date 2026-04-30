@@ -21,6 +21,7 @@ interface AttendanceTableProps {
   periodLabel: string;
   onSave?: () => Promise<boolean>;
   isMonthLocked?: boolean;
+  pendingAtKeys?: Set<string>;
 }
 
 interface JustificationModal {
@@ -33,7 +34,10 @@ interface JustificationModal {
 interface AtestadoModal {
   employeeId: string;
   day: string;
+  endDay: string;
   employeeName: string;
+  /** Quando true, modal abre apenas para anexar arquivo (AT já existente). */
+  attachOnly?: boolean;
 }
 
 function SaveButton({ onSave }: { onSave: () => Promise<boolean> }) {
@@ -77,6 +81,7 @@ export function AttendanceTable({
   periodLabel,
   onSave,
   isMonthLocked = false,
+  pendingAtKeys,
 }: AttendanceTableProps) {
   const { accessToken } = useAuth();
   const [bulkCodeByDay, setBulkCodeByDay] = useState<Record<string, string>>({});
@@ -98,12 +103,11 @@ export function AttendanceTable({
 
   function handleSupervisorChange(employeeId: string, day: string, value: AttendanceCode, employeeName: string) {
     if (value === 'AT') {
-      // AT requires mandatory atestado file upload
+      // AT abre modal de atestado (arquivo opcional, período selecionável)
       setAtFile(null);
       setAtText('');
       setAtError('');
-      setAtModal({ employeeId, day, employeeName });
-      setTimeout(() => atFileRef.current?.click(), 150);
+      setAtModal({ employeeId, day, endDay: day, employeeName });
     } else if (ABONO_CODES.includes(value) && addJustification) {
       // Abrir modal de justificativa
       setJustText('');
@@ -136,16 +140,33 @@ export function AttendanceTable({
     setJustText('');
   }
 
+  // Reabrir modal apenas para anexar arquivo em um AT já existente (sem alterar células)
+  const handleRequestAtUpload = useCallback((employeeId: string, day: string, employeeName: string) => {
+    setAtFile(null);
+    setAtText('');
+    setAtError('');
+    setAtModal({ employeeId, day, endDay: day, employeeName, attachOnly: true });
+    setTimeout(() => atFileRef.current?.click(), 150);
+  }, []);
+
   async function handleAtModalConfirm() {
-    if (!atModal || !atFile) return;
+    if (!atModal) return;
+    // attachOnly exige arquivo (única razão do modal); fluxo normal aceita lançar pendente
+    if (atModal.attachOnly && !atFile) {
+      setAtError('Selecione um arquivo para anexar.');
+      return;
+    }
     setAtUploading(true);
     setAtError('');
     try {
       const formData = new FormData();
-      formData.append('atestado', atFile);
+      if (atFile) formData.append('atestado', atFile);
       formData.append('employeeId', atModal.employeeId);
       formData.append('day', atModal.day);
-      formData.append('text', atText.trim() || `Atestado — ${atModal.day}`);
+      if (atModal.endDay && atModal.endDay !== atModal.day) {
+        formData.append('endDay', atModal.endDay);
+      }
+      if (atText.trim()) formData.append('text', atText.trim());
 
       const res = await fetch('/api/attendance/upload-atestado', {
         method: 'POST',
@@ -155,16 +176,32 @@ export function AttendanceTable({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Falha ao enviar arquivo');
+        throw new Error(data.message || 'Falha ao salvar atestado');
+      }
+      const data = await res.json().catch(() => ({}));
+      const days: string[] = Array.isArray(data.days) && data.days.length
+        ? data.days
+        : [atModal.day];
+
+      // Marca AT na coluna supervisor para todos os dias do período (exceto attachOnly)
+      if (!atModal.attachOnly) {
+        for (const d of days) {
+          updateRecord(atModal.employeeId, d, 'supervisor', 'AT');
+        }
+        toast.success(
+          atFile
+            ? `Atestado anexado em ${days.length} dia(s)`
+            : `Atestado lançado como pendente em ${days.length} dia(s)`
+        );
+      } else {
+        toast.success('Arquivo anexado ao atestado');
       }
 
-      // Apply AT to the supervisor record
-      updateRecord(atModal.employeeId, atModal.day, 'supervisor', 'AT');
       setAtModal(null);
       setAtFile(null);
       setAtText('');
     } catch (e: any) {
-      setAtError(e.message || 'Erro ao enviar atestado');
+      setAtError(e.message || 'Erro ao salvar atestado');
     } finally {
       setAtUploading(false);
     }
@@ -298,9 +335,11 @@ export function AttendanceTable({
           <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
             <div className="bg-emerald-700 px-6 py-4 flex items-start justify-between">
               <div>
-                <h2 className="text-white font-bold text-base">Atestado Médico</h2>
+                <h2 className="text-white font-bold text-base">
+                  {atModal.attachOnly ? 'Anexar Atestado' : 'Atestado Médico'}
+                </h2>
                 <p className="text-white/70 text-xs mt-0.5">
-                  AT — {atModal.employeeName.toUpperCase()} — {format(new Date(atModal.day + 'T12:00:00'), 'dd/MM/yyyy')}
+                  AT — {atModal.employeeName.toUpperCase()}
                 </p>
               </div>
               <button
@@ -325,10 +364,50 @@ export function AttendanceTable({
                   setAtError('');
                 }}
               />
+              {/* Período (apenas no fluxo normal) */}
+              {!atModal.attachOnly && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Período do Atestado</label>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="block text-[10px] text-gray-400 mb-0.5">Início</span>
+                      <input
+                        type="date"
+                        value={atModal.day}
+                        readOnly
+                        disabled
+                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-gray-400 mb-0.5">Fim</span>
+                      <input
+                        type="date"
+                        min={atModal.day}
+                        max={daysInMonth.length ? daysInMonth[daysInMonth.length - 1].day : undefined}
+                        value={atModal.endDay}
+                        onChange={e => {
+                          const v = e.target.value;
+                          if (atModal && v >= atModal.day) {
+                            setAtModal({ ...atModal, endDay: v });
+                          }
+                        }}
+                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-3 py-2 text-sm transition-all focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1.5">
+                    AT será aplicado em {Math.max(1, Math.round((new Date(atModal.endDay + 'T12:00:00').getTime() - new Date(atModal.day + 'T12:00:00').getTime()) / 86400000) + 1)} dia(s) corridos.
+                  </p>
+                </div>
+              )}
               {/* File upload area */}
               <div>
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Foto / Arquivo do Atestado <span className="text-red-500">*</span>
+                  Foto / Arquivo do Atestado{' '}
+                  {atModal.attachOnly
+                    ? <span className="text-red-500">*</span>
+                    : <span className="text-gray-400 normal-case font-normal">(opcional — pode anexar depois)</span>}
                 </label>
                 <button
                   type="button"
@@ -356,28 +435,34 @@ export function AttendanceTable({
                 </button>
               </div>
               {/* Optional notes */}
-              <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Observação (opcional)</label>
-                <input
-                  type="text"
-                  value={atText}
-                  onChange={e => setAtText(e.target.value)}
-                  placeholder="Ex: Atestado de 2 dias, Dr. João..."
-                  className="mt-1.5 w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
-                />
-              </div>
+              {!atModal.attachOnly && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Observação (opcional)</label>
+                  <input
+                    type="text"
+                    value={atText}
+                    onChange={e => setAtText(e.target.value)}
+                    placeholder="Ex: Atestado de 2 dias, Dr. João..."
+                    className="mt-1.5 w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-2.5 text-sm transition-all focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                  />
+                </div>
+              )}
               {atError && (
                 <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{atError}</p>
               )}
               <div className="flex gap-3">
                 <button
                   onClick={handleAtModalConfirm}
-                  disabled={!atFile || atUploading}
+                  disabled={atUploading || (atModal.attachOnly && !atFile)}
                   className="flex-1 h-10 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {atUploading ? (
                     <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enviando...</>
-                  ) : 'Confirmar AT'}
+                  ) : atModal.attachOnly
+                    ? 'Anexar arquivo'
+                    : atFile
+                      ? 'Confirmar AT'
+                      : 'Lançar como pendente'}
                 </button>
                 <button
                   onClick={handleAtModalCancel}
@@ -506,6 +591,8 @@ export function AttendanceTable({
                             onSupervisorChange={handleSupervisorChangeCell}
                             currentUserRole={currentUserRole}
                             isDisabled={isEditDisabled}
+                            isAtPending={pendingAtKeys?.has(`${employee.id}|${dayInfo.day}`) ?? false}
+                            onRequestAtUpload={handleRequestAtUpload}
                           />
                         </td>
                       );

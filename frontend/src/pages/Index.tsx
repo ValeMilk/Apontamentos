@@ -108,6 +108,25 @@ const Index = () => {
     );
   }, [justifications, filteredEmployees, daysInMonth]);
 
+  // Atestados pendentes: c\u00e9lulas marcadas como AT sem arquivo anexado
+  const pendingAtKeys = useMemo(() => {
+    const withFile = new Set(
+      justifications
+        .filter(j => !!j.attestFile)
+        .map(j => `${j.employeeId}|${j.day}`)
+    );
+    const set = new Set<string>();
+    for (const emp of filteredEmployees) {
+      for (const dayInfo of daysInMonth) {
+        const key = `${emp.id}|${dayInfo.day}`;
+        if (withFile.has(key)) continue;
+        const record = getRecord(emp.id, dayInfo.day);
+        if (record.supervisor === 'AT') set.add(key);
+      }
+    }
+    return set;
+  }, [justifications, filteredEmployees, daysInMonth, getRecord]);
+
   return (
     <div className="min-h-screen bg-background">
       <AuthSync
@@ -198,6 +217,7 @@ const Index = () => {
           periodLabel={periodLabel}
           onSave={saveAll}
           isMonthLocked={isMonthLocked}
+          pendingAtKeys={pendingAtKeys}
         />
 
         <JustificationsSection

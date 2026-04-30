@@ -520,7 +520,7 @@ router.post('/fix-supervisor-ids', authenticateJWT, requireRole(['admin']), asyn
   }
 });
 
-// Upload atestado file for AT justification
+// Upload atestado file for AT justification (file optional; supports period via endDay)
 router.post('/upload-atestado', authenticateJWT, uploadAtestado.single('atestado'), async (req: AuthRequest, res) => {
   try {
     const role = req.user?.role;
@@ -528,17 +528,30 @@ router.post('/upload-atestado', authenticateJWT, uploadAtestado.single('atestado
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ message: 'Arquivo não enviado' });
-    }
-
-    const { employeeId, day, text } = req.body;
+    const { employeeId, day, endDay, text } = req.body;
     if (!employeeId || !day) {
       return res.status(400).json({ message: 'employeeId e day são obrigatórios' });
     }
 
-    const filePath = `atestados/${req.file.filename}`;
-    const justText = (text || '').trim() || `Atestado — ${day}`;
+    // Build list of days (inclusive) covering day -> endDay (or just [day])
+    const startDate = new Date(`${day}T12:00:00`);
+    const finalDate = endDay ? new Date(`${endDay}T12:00:00`) : startDate;
+    if (isNaN(startDate.getTime()) || isNaN(finalDate.getTime()) || finalDate < startDate) {
+      return res.status(400).json({ message: 'Período inválido' });
+    }
+    const days: string[] = [];
+    const cursor = new Date(startDate);
+    // Cap at 60 days as a safety guard
+    while (cursor <= finalDate && days.length < 60) {
+      const yyyy = cursor.getFullYear();
+      const mm = String(cursor.getMonth() + 1).padStart(2, '0');
+      const dd = String(cursor.getDate()).padStart(2, '0');
+      days.push(`${yyyy}-${mm}-${dd}`);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const filePath = req.file ? `atestados/${req.file.filename}` : null;
+    const justText = (text || '').trim() || `Atestado — ${day}${endDay && endDay !== day ? ` a ${endDay}` : ''}`;
 
     // Infer supervisorId from employeeId
     const knownSupervisorIds = (
@@ -548,34 +561,39 @@ router.post('/upload-atestado', authenticateJWT, uploadAtestado.single('atestado
       .filter(Boolean);
     const supervisorId = inferSupervisorIdFromEmployeeId(employeeId, knownSupervisorIds);
 
-    await Justification.findOneAndUpdate(
-      { employeeId, day },
-      {
-        $set: {
-          text: justText,
-          attestFile: filePath,
-          createdBy: req.userId ? new Types.ObjectId(String(req.userId)) : null,
-          supervisorId,
-        },
-      },
-      { upsert: true, new: true }
-    );
+    // Upsert one justification per day. Preserve existing attestFile when none uploaded now.
+    for (const d of days) {
+      const update: any = {
+        text: justText,
+        createdBy: req.userId ? new Types.ObjectId(String(req.userId)) : null,
+        supervisorId,
+      };
+      if (filePath) {
+        update.attestFile = filePath;
+      }
+      await Justification.findOneAndUpdate(
+        { employeeId, day: d },
+        { $set: update },
+        { upsert: true, new: true }
+      );
+    }
 
     // Audit log
     try {
       const userName = req.user?.name || req.user?.username || '';
+      const periodDesc = days.length > 1 ? `${days[0]} a ${days[days.length - 1]} (${days.length} dias)` : days[0];
       await AuditLog.create({
         action: 'justification_create',
         userId: new Types.ObjectId(String(req.userId)),
         userName,
         userRole: role,
         targetType: 'justification',
-        description: `${userName} anexou atestado de ${employeeId} em ${day}`,
-        details: { employeeId, day, attestFile: filePath },
+        description: `${userName} ${filePath ? 'anexou atestado' : 'lançou atestado pendente'} de ${employeeId} em ${periodDesc}`,
+        details: { employeeId, days, attestFile: filePath },
       });
     } catch (_) {}
 
-    res.json({ ok: true, path: filePath });
+    res.json({ ok: true, path: filePath, days });
   } catch (e: any) {
     console.error('Failed to upload atestado', e);
     if (e.message?.includes('Tipo de arquivo')) {

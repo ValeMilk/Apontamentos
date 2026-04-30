@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { AttendanceCode, APONTADOR_CODES, SUPERVISOR_CODES, DayInfo } from '@/types/attendance';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { Paperclip } from 'lucide-react';
 
 interface AttendanceCellProps {
   dayInfo: DayInfo;
@@ -13,6 +14,8 @@ interface AttendanceCellProps {
   onSupervisorChange: (employeeId: string, day: string, value: AttendanceCode, employeeName: string) => void;
   currentUserRole: 'admin' | 'gerente' | 'supervisor' | 'expectador';
   isDisabled?: boolean;
+  isAtPending?: boolean;
+  onRequestAtUpload?: (employeeId: string, day: string, employeeName: string) => void;
 }
 
 function getCellClass(value: AttendanceCode, dayInfo: DayInfo): string {
@@ -53,6 +56,8 @@ export const AttendanceCell = memo(function AttendanceCell({
   onSupervisorChange,
   currentUserRole,
   isDisabled = false,
+  isAtPending = false,
+  onRequestAtUpload,
 }: AttendanceCellProps) {
   // Apenas domingos continuam automáticos/bloqueados. Feriados agora são opcionais (marcados pelo botão).
   const isBlocked = dayInfo.isSunday || isDisabled;
@@ -115,8 +120,9 @@ export const AttendanceCell = memo(function AttendanceCell({
       
       {/* Supervisor row */}
       <div className={cn(
-        "flex-1 min-h-[20px] border-t border-border/30",
-        getCellClass(supervisorValue, dayInfo)
+        "flex-1 min-h-[20px] border-t border-border/30 relative",
+        getCellClass(supervisorValue, dayInfo),
+        supervisorValue === 'AT' && isAtPending && "ring-1 ring-amber-500 ring-inset"
       )}>
         <Select
           value={supervisorValue || 'empty'}
@@ -133,6 +139,19 @@ export const AttendanceCell = memo(function AttendanceCell({
             ))}
           </SelectContent>
         </Select>
+        {supervisorValue === 'AT' && isAtPending && supervisorEditable && onRequestAtUpload && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestAtUpload(employeeId, dayInfo.day, employeeName);
+            }}
+            title="Anexar arquivo do atestado"
+            className="absolute -top-0.5 -right-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded-full w-3 h-3 flex items-center justify-center shadow-sm"
+          >
+            <Paperclip className="w-2 h-2" strokeWidth={3} />
+          </button>
+        )}
       </div>
     </div>
   );
