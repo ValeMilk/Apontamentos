@@ -1,8 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AttendanceRecord, AttendanceCode, DayInfo, Justification } from '@/types/attendance';
 import { employees, supervisors as mockSupervisors, holidays } from '@/data/mockData';
 import { useAuth } from '@/context/AuthContext';
 import { format, isSunday, addDays } from 'date-fns';
+
+export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export function useAttendance() {
   const [currentDate, setCurrentDate] = useState<Date>(() => {
@@ -20,6 +22,15 @@ export function useAttendance() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [dirtyRecordKeys, setDirtyRecordKeys] = useState<Set<string>>(new Set());
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
+
+  // Refs para autosave (não causam rerender)
+  const autosaveTimerRef = useRef<number | null>(null);
+  const savedFlashTimeoutRef = useRef<number | null>(null);
+  const isSavingRef = useRef(false);
+  const pendingAfterSaveRef = useRef(false);
+  const saveAllRef = useRef<() => Promise<boolean>>(async () => false);
+  const autosavePausedRef = useRef(false);
 
   // helper to slugify names for stable ids
   const slug = (s: string) => s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
@@ -251,6 +262,45 @@ export function useAttendance() {
     return { employeeId, day, apontador: '', supervisor: '' };
   }, [recordsMap]);
 
+  // Dispara autosave com debounce (cancela timer anterior). Chamado em cada edição.
+  const triggerAutosaveRef = useRef<() => void>(() => {});
+  const triggerAutosave = useCallback(() => {
+    if (autosavePausedRef.current) return;
+    if (autosaveTimerRef.current != null) {
+      window.clearTimeout(autosaveTimerRef.current);
+    }
+    autosaveTimerRef.current = window.setTimeout(async () => {
+      autosaveTimerRef.current = null;
+      if (isSavingRef.current) {
+        pendingAfterSaveRef.current = true;
+        return;
+      }
+      isSavingRef.current = true;
+      setAutosaveStatus('saving');
+      try {
+        console.debug('[autosave] disparando saveAll');
+        const ok = await saveAllRef.current();
+        if (ok) {
+          setAutosaveStatus('saved');
+          if (savedFlashTimeoutRef.current) window.clearTimeout(savedFlashTimeoutRef.current);
+          savedFlashTimeoutRef.current = window.setTimeout(() => setAutosaveStatus('idle'), 2000);
+        } else {
+          setAutosaveStatus('error');
+        }
+      } catch (e) {
+        console.error('[autosave] erro', e);
+        setAutosaveStatus('error');
+      } finally {
+        isSavingRef.current = false;
+        if (pendingAfterSaveRef.current) {
+          pendingAfterSaveRef.current = false;
+          window.setTimeout(() => triggerAutosaveRef.current(), 300);
+        }
+      }
+    }, 800) as unknown as number;
+  }, []);
+  useEffect(() => { triggerAutosaveRef.current = triggerAutosave; }, [triggerAutosave]);
+
   const updateRecord = useCallback((
     employeeId: string,
     day: string,
@@ -326,7 +376,8 @@ export function useAttendance() {
         return prev.filter(j => !(j.employeeId === employeeId && j.day === day));
       });
     }
-  }, [employeesState, daysInMonth, accessToken]);
+    triggerAutosave();
+  }, [employeesState, daysInMonth, accessToken, triggerAutosave]);
 
   // Batch update multiple records in a single setState call (avoids N re-renders)
   const updateRecordsBatch = useCallback((
@@ -365,7 +416,8 @@ export function useAttendance() {
       }
       return Array.from(map.values());
     });
-  }, []);
+    triggerAutosave();
+  }, [triggerAutosave]);
 
   const clearAll = useCallback(() => {
     setHasUnsavedChanges(true);
@@ -630,6 +682,18 @@ export function useAttendance() {
     }
   }, [records, justifications, accessToken, dirtyRecordKeys, employeesById]);
 
+  // Sincronizar saveAll mais recente no ref usado pelo autosave
+  useEffect(() => { saveAllRef.current = saveAll; }, [saveAll]);
+
+  // Permitir ao consumidor pausar/retomar autosave (ex.: m\u00eas bloqueado, expectador)
+  const setAutosavePaused = useCallback((paused: boolean) => {
+    autosavePausedRef.current = paused;
+    if (paused && autosaveTimerRef.current != null) {
+      window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+  }, []);
+
   return {
     currentDate,
     setCurrentDate,
@@ -655,6 +719,8 @@ export function useAttendance() {
     saveAll,
     refreshData,
     hasUnsavedChanges,
+    autosaveStatus,
+    setAutosavePaused,
   };
 }
 

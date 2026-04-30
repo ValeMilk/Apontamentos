@@ -12,8 +12,9 @@ import { ptBR } from 'date-fns/locale';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2, Check, Loader2, CloudOff } from 'lucide-react';
 import { toast } from 'sonner';
+import type { AutosaveStatus } from '@/hooks/useAttendance';
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+type SaveStatus = AutosaveStatus;
 
 function AutoSaveStatus({ status }: { status: SaveStatus }) {
   if (status === 'saving') {
@@ -95,6 +96,8 @@ const Index = () => {
     saveAll,
     refreshData,
     hasUnsavedChanges,
+    autosaveStatus,
+    setAutosavePaused,
   } = useAttendance();
 
   // Extract month in YYYY-MM format from currentDate
@@ -159,40 +162,19 @@ const Index = () => {
     return set;
   }, [justifications, filteredEmployees, daysInMonth, getRecord]);
 
-  // Autosave: salva automaticamente após pequeno debounce quando houver alterações
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const savedTimeoutRef = useRef<number | null>(null);
-  // Mantemos saveAll em ref para o effect de autosave NÃO ser reagendado a cada
-  // mudança de records (saveAll muda de referência sempre que records muda).
-  const saveAllRef = useRef(saveAll);
+  // Autosave: status vem do hook useAttendance. Pausar quando mes bloqueado/expectador.
   useEffect(() => {
-    saveAllRef.current = saveAll;
-  }, [saveAll]);
+    setAutosavePaused(currentUserRole === 'expectador' || isMonthLocked);
+  }, [currentUserRole, isMonthLocked, setAutosavePaused]);
 
+  // Toast em caso de erro de autosave
+  const lastErrorRef = useRef<AutosaveStatus>('idle');
   useEffect(() => {
-    if (!hasUnsavedChanges) return;
-    if (currentUserRole === 'expectador') return;
-    if (isMonthLocked) return;
-    const t = window.setTimeout(async () => {
-      setSaveStatus('saving');
-      try {
-        const ok = await saveAllRef.current();
-        if (ok) {
-          setSaveStatus('saved');
-          if (savedTimeoutRef.current) window.clearTimeout(savedTimeoutRef.current);
-          savedTimeoutRef.current = window.setTimeout(() => setSaveStatus('idle'), 2000);
-        } else {
-          setSaveStatus('error');
-          toast.error('Falha ao salvar automaticamente');
-        }
-      } catch (e) {
-        console.error('[autosave] error', e);
-        setSaveStatus('error');
-        toast.error('Erro ao salvar automaticamente');
-      }
-    }, 1000);
-    return () => window.clearTimeout(t);
-  }, [hasUnsavedChanges, currentUserRole, isMonthLocked]);
+    if (autosaveStatus === 'error' && lastErrorRef.current !== 'error') {
+      toast.error('Falha ao salvar automaticamente');
+    }
+    lastErrorRef.current = autosaveStatus;
+  }, [autosaveStatus]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,7 +224,7 @@ const Index = () => {
               </Link>
             )}
             {currentUserRole !== 'expectador' && !isMonthLocked && (
-              <AutoSaveStatus status={saveStatus} />
+              <AutoSaveStatus status={autosaveStatus} />
             )}
             <div className="text-sm bg-primary-foreground/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
               <UserCircle2 className="w-4 h-4 text-primary-foreground/80" />
