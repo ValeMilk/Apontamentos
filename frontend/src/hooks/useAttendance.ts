@@ -311,8 +311,22 @@ export function useAttendance() {
         if (exists) return prev;
         return [{ id: `just-${Date.now()}`, employeeId, day, text: placeholder }, ...prev];
       });
+    } else if (field === 'supervisor' && !JUST_CODES_TO_PREFILL.includes(value as AttendanceCode)) {
+      // Código mudou PARA não-justificativa (P, F, '', FOLGA etc.) — remover justificativa local e no servidor
+      setJustifications(prev => {
+        const toRemove = prev.find(j => j.employeeId === employeeId && j.day === day);
+        if (!toRemove) return prev;
+        if (accessToken) {
+          void fetch('/api/attendance/justifications', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify({ id: toRemove.id, employeeId, day }),
+          }).catch(() => {});
+        }
+        return prev.filter(j => !(j.employeeId === employeeId && j.day === day));
+      });
     }
-  }, [employeesState, daysInMonth]);
+  }, [employeesState, daysInMonth, accessToken]);
 
   // Batch update multiple records in a single setState call (avoids N re-renders)
   const updateRecordsBatch = useCallback((

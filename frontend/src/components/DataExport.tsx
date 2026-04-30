@@ -68,16 +68,28 @@ export function DataExport({
     const data = generateData();
     const headers = ['DATA', 'DIA DA SEMANA', 'VENDEDOR/PROMOTOR', 'SUPORTE', 'COMERCIAL'];
 
-    const csv = [
-      headers.join(','),
-      ...data.map(row => headers.map(h => (row[h] || '')).join(','))
-    ].join('\n');
+    // Normaliza string: remove acentos e caracteres especiais problemáticos no Excel
+    const sanitize = (v: string): string =>
+      v
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+        .replace(/[\u2013\u2014]/g, '-')  // em dash / en dash -> hyphen
+        .replace(/[\u00a0]/g, ' ')        // non-breaking space -> space
+        .trim();
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const escapeCSV = (v: string) => `"${sanitize(v).replace(/"/g, '""')}"`;
+
+    const csv = [
+      headers.map(escapeCSV).join(','),
+      ...data.map(row => headers.map(h => escapeCSV(row[h] || '')).join(','))
+    ].join('\r\n'); // CRLF para compatibilidade Excel Windows
+
+    // BOM UTF-8 garante que Excel reconheça a codificação corretamente
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `apontamento_${periodLabel.replace(/\s/g, '_')}.csv`;
+    link.download = `apontamento_${periodLabel.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
