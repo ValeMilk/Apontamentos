@@ -519,10 +519,17 @@ export function useAttendance() {
     setHasUnsavedChanges(true);
     const newJustification = { id: `just-${Date.now()}`, employeeId, day, text };
 
-    setJustifications(prev => [
-      newJustification,
-      ...prev,
-    ]);
+    // Atualiza ref síncrono — substitui placeholder do mesmo (employeeId, day) se existir,
+    // ou prepende. Isso garante que flushAutosave envia o texto real, não o placeholder.
+    {
+      const prev = justificationsRef.current;
+      const withoutPlaceholder = prev.filter(j => !(j.employeeId === employeeId && j.day === day));
+      justificationsRef.current = [newJustification, ...withoutPlaceholder];
+    }
+    setJustifications(prev => {
+      const withoutPlaceholder = prev.filter(j => !(j.employeeId === employeeId && j.day === day));
+      return [newJustification, ...withoutPlaceholder];
+    });
 
     // Se solicitado, aplicar também à legenda do supervisor (AT/ABF/ABT)
     const JUST_CODES_TO_PREFILL: AttendanceCode[] = ['AT', 'ABF', 'ABT'];
