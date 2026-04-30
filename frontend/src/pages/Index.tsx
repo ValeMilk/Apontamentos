@@ -9,34 +9,38 @@ import { JustificationsSection } from '@/components/JustificationsSection';
 import { AtestadosSection } from '@/components/AtestadosSection';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useEffect, useMemo, useState } from 'react';
-import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2, Save, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2, Check, Loader2, CloudOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-function SaveHeaderButton({ onSave }: { onSave: () => Promise<boolean> }) {
-  const [saving, setSaving] = useState(false);
-  return (
-    <button
-      onClick={async () => {
-        if (saving) return;
-        setSaving(true);
-        try {
-          const ok = await onSave();
-          if (ok) toast.success('Registros salvos com sucesso');
-          else toast.error('Falha ao salvar registros');
-        } catch {
-          toast.error('Erro ao salvar registros');
-        } finally {
-          setSaving(false);
-        }
-      }}
-      disabled={saving}
-      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed border border-primary-foreground/20"
-    >
-      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-      {saving ? 'Salvando...' : 'Salvar'}
-    </button>
-  );
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+function AutoSaveStatus({ status }: { status: SaveStatus }) {
+  if (status === 'saving') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-primary-foreground/80">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        Salvando...
+      </span>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-red-200">
+        <CloudOff className="w-3.5 h-3.5" />
+        Falha ao salvar
+      </span>
+    );
+  }
+  if (status === 'saved') {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-primary-foreground/80">
+        <Check className="w-3.5 h-3.5" />
+        Salvo automaticamente
+      </span>
+    );
+  }
+  return null;
 }
 
 // AuthSync extracted outside Index to prevent re-mounting on every render
@@ -90,6 +94,7 @@ const Index = () => {
     getEmployeeFaltas,
     saveAll,
     refreshData,
+    hasUnsavedChanges,
   } = useAttendance();
 
   // Extract month in YYYY-MM format from currentDate
@@ -154,6 +159,33 @@ const Index = () => {
     return set;
   }, [justifications, filteredEmployees, daysInMonth, getRecord]);
 
+  // Autosave: salva automaticamente após pequeno debounce quando houver alterações
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const savedTimeoutRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    if (currentUserRole === 'expectador') return;
+    if (isMonthLocked) return;
+    const t = window.setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        const ok = await saveAll();
+        if (ok) {
+          setSaveStatus('saved');
+          if (savedTimeoutRef.current) window.clearTimeout(savedTimeoutRef.current);
+          savedTimeoutRef.current = window.setTimeout(() => setSaveStatus('idle'), 2000);
+        } else {
+          setSaveStatus('error');
+          toast.error('Falha ao salvar automaticamente');
+        }
+      } catch {
+        setSaveStatus('error');
+        toast.error('Erro ao salvar automaticamente');
+      }
+    }, 1000);
+    return () => window.clearTimeout(t);
+  }, [hasUnsavedChanges, saveAll, currentUserRole, isMonthLocked]);
+
   return (
     <div className="min-h-screen bg-background">
       <AuthSync
@@ -202,7 +234,7 @@ const Index = () => {
               </Link>
             )}
             {currentUserRole !== 'expectador' && !isMonthLocked && (
-              <SaveHeaderButton onSave={saveAll} />
+              <AutoSaveStatus status={saveStatus} />
             )}
             <div className="text-sm bg-primary-foreground/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
               <UserCircle2 className="w-4 h-4 text-primary-foreground/80" />

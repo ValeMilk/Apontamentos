@@ -661,6 +661,7 @@ export function useAttendance() {
     generateExportData,
     saveAll,
     refreshData,
+    hasUnsavedChanges,
   };
 }
 
