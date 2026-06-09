@@ -46,6 +46,7 @@
     --status-abono-trab: 265 60% 58%;
     --status-sunday: 220 30% 75%;
     --status-holiday: 280 60% 65%;
+    --status-feriado: 260 70% 50%;
     --status-folga: 330 55% 55%;
 
     /* Table specific */
@@ -168,6 +169,10 @@
   
   .cell-holiday {
     @apply bg-[hsl(var(--status-holiday))] text-white font-medium;
+  }
+
+  .cell-feriado {
+    @apply bg-[hsl(var(--status-feriado))] text-white font-medium;
   }
   
   .table-header-cell {

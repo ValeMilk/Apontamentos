@@ -37,8 +37,9 @@ function getCellClass(value: AttendanceCode, dayInfo: DayInfo): string {
     case 'ABT':
       return 'cell-abono-trab';
     case 'FER':
-    case 'FERI':
       return 'cell-holiday';
+    case 'FERI':
+      return 'cell-feriado';
     case 'FOLGA':
       return 'cell-folga';
     default:

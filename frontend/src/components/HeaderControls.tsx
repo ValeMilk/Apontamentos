@@ -291,8 +291,7 @@ export function HeaderControls({
             { cls: 'cell-falta-manha', code: 'FM', label: 'Falta Manhã' },
             { cls: 'cell-atestado', code: 'AT', label: 'Atestado' },
             { cls: 'cell-abono-falta', code: 'ABF', label: 'Abono Falta' },
-            { cls: 'cell-abono-trab', code: 'ABT', label: 'Abono Trab.' },
-            { cls: 'cell-sunday', code: 'D', label: 'Domingo' },
+            { cls: 'cell-abono-trab', code: 'ABT', label: 'Abono Trab.' },            { cls: 'cell-feriado', code: 'FERI', label: 'Férias' },            { cls: 'cell-sunday', code: 'D', label: 'Domingo' },
             { cls: 'cell-holiday', code: 'F', label: 'Feriado' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">
