@@ -1,4 +1,4 @@
-export type AttendanceCode = 'P' | 'F' | 'FT' | 'FM' | 'AT' | 'ABF' | 'ABT' | 'DOM' | 'FER' | 'FERI' | 'FOLGA' | '';
+export type AttendanceCode = 'P' | 'F' | 'FT' | 'FM' | 'AT' | 'ABF' | 'ABT' | 'DOM' | 'FD' | 'FERI' | 'FOLGA' | '';
 
 export type UserRole = 'admin' | 'gerente' | 'supervisor' | 'expectador';
 
@@ -52,7 +52,7 @@ export const CODE_LABELS: Record<AttendanceCode, string> = {
   'ABF': 'Abono Falta',
   'ABT': 'Abono Trabalhado',
   'DOM': 'Domingo',
-  'FER': 'Feriado',
+  'FD': 'Feriado',
   'FERI': 'Férias',
   'FOLGA': 'Folga',
   '': 'Vazio',

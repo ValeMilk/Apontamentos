@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { AttendanceCode, APONTADOR_CODES, SUPERVISOR_CODES, DayInfo } from '@/types/attendance';
+import { AttendanceCode, APONTADOR_CODES, SUPERVISOR_CODES, DayInfo, CODE_LABELS } from '@/types/attendance';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Paperclip } from 'lucide-react';
@@ -36,8 +36,8 @@ function getCellClass(value: AttendanceCode, dayInfo: DayInfo): string {
       return 'cell-abono-falta';
     case 'ABT':
       return 'cell-abono-trab';
-    case 'FER':
-      return 'cell-holiday';
+    case 'FD':
+      return 'cell-fd';
     case 'FERI':
       return 'cell-feriado';
     case 'FOLGA':
@@ -108,7 +108,7 @@ export const AttendanceCell = memo(function AttendanceCell({
             <SelectContent>
               <SelectItem value="empty">-</SelectItem>
               {APONTADOR_CODES.filter(c => c !== '').map(code => (
-                <SelectItem key={code} value={code}>{code}</SelectItem>
+                <SelectItem key={code} value={code}>{CODE_LABELS[code]}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -136,7 +136,7 @@ export const AttendanceCell = memo(function AttendanceCell({
           <SelectContent>
             <SelectItem value="empty">-</SelectItem>
             {SUPERVISOR_CODES.filter(c => c !== '').map(code => (
-              <SelectItem key={code} value={code}>{code}</SelectItem>
+              <SelectItem key={code} value={code}>{CODE_LABELS[code]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
