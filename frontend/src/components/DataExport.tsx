@@ -11,6 +11,7 @@ interface DataExportProps {
   getRecord: (employeeId: string, day: string) => AttendanceRecord;
   periodLabel: string;
   supervisors: Supervisor[];
+  justifications?: Array<{ employeeId: string; day: string; text: string; attestFile?: string }>;
 }
 
 export function DataExport({
@@ -19,6 +20,7 @@ export function DataExport({
   getRecord,
   periodLabel,
   supervisors,
+  justifications = [],
 }: DataExportProps) {
   const [selectedSupervisor, setSelectedSupervisor] = useState<string>('all');
   // Generate rows: one row per (day, employee)
@@ -33,6 +35,7 @@ export function DataExport({
       const dayOfWeek = WEEKDAY_ABBR_PT[dayInfo.date.getDay()];
       employeesToUse.forEach(emp => {
         const record = getRecord(emp.id, dayInfo.day);
+        const justification = justifications.find(j => j.employeeId === emp.id && j.day === dayInfo.day);
 
         let supportCode: AttendanceCode | string;
         let supervisorCode: AttendanceCode | string;
@@ -57,6 +60,7 @@ export function DataExport({
           'VENDEDOR/PROMOTOR': emp.name,
           SUPORTE: supportLabel,
           COMERCIAL: supervisorLabel,
+          JUSTIFICATIVA: justification?.text || '',
         });
       });
     });
@@ -66,7 +70,7 @@ export function DataExport({
 
   const handleExport = () => {
     const data = generateData();
-    const headers = ['DATA', 'DIA DA SEMANA', 'VENDEDOR/PROMOTOR', 'SUPORTE', 'COMERCIAL'];
+    const headers = ['DATA', 'DIA DA SEMANA', 'VENDEDOR/PROMOTOR', 'SUPORTE', 'COMERCIAL', 'JUSTIFICATIVA'];
 
     // Normaliza string: remove acentos e caracteres especiais problemáticos no Excel
     const sanitize = (v: string): string =>
@@ -125,6 +129,7 @@ export function DataExport({
               <th className="border border-border px-2 py-1.5 text-left font-medium">VENDEDOR/PROMOTOR</th>
               <th className="border border-border px-2 py-1.5 text-left font-medium w-[140px]">SUPORTE</th>
               <th className="border border-border px-2 py-1.5 text-left font-medium w-[140px]">COMERCIAL</th>
+              <th className="border border-border px-2 py-1.5 text-left font-medium">JUSTIFICATIVA</th>
             </tr>
           </thead>
           <tbody>
@@ -135,6 +140,7 @@ export function DataExport({
                 <td className="border border-border px-2 py-1 font-medium">{row['VENDEDOR/PROMOTOR']}</td>
                 <td className="border border-border px-2 py-1">{row.SUPORTE}</td>
                 <td className="border border-border px-2 py-1">{row.COMERCIAL}</td>
+                <td className="border border-border px-2 py-1 text-xs max-w-[300px] truncate">{row.JUSTIFICATIVA}</td>
               </tr>
             ))}
           </tbody>

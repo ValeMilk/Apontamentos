@@ -14,6 +14,7 @@ const ExportPage = () => {
     supervisors,
     getRecord,
     currentDate,
+    justifications,
   } = useAttendance();
 
   const periodEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 25);
@@ -58,6 +59,7 @@ const ExportPage = () => {
           getRecord={getRecord}
           periodLabel={periodLabel}
           supervisors={supervisors}
+          justifications={justifications}
         />
       </main>
     </div>
