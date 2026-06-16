@@ -121,30 +121,36 @@ export function DataExport({
       </div>
       
       <div className="p-4 overflow-x-auto">
-        <table className="w-full text-xs border border-border">
-          <thead>
-            <tr className="bg-muted">
-              <th className="border border-border px-2 py-1.5 text-left font-medium w-[120px]">DATA</th>
-              <th className="border border-border px-2 py-1.5 text-left font-medium w-[120px]">DIA DA SEMANA</th>
-              <th className="border border-border px-2 py-1.5 text-left font-medium">VENDEDOR/PROMOTOR</th>
-              <th className="border border-border px-2 py-1.5 text-left font-medium w-[140px]">SUPORTE</th>
-              <th className="border border-border px-2 py-1.5 text-left font-medium w-[140px]">COMERCIAL</th>
-              <th className="border border-border px-2 py-1.5 text-left font-medium">JUSTIFICATIVA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {generateData().map((row, i) => (
-              <tr key={i} className={i % 2 === 1 ? 'bg-muted/30' : ''}>
-                <td className="border border-border px-2 py-1 text-sm">{row.DATA}</td>
-                <td className="border border-border px-2 py-1 text-sm">{row['DIA DA SEMANA']}</td>
-                <td className="border border-border px-2 py-1 font-medium">{row['VENDEDOR/PROMOTOR']}</td>
-                <td className="border border-border px-2 py-1">{row.SUPORTE}</td>
-                <td className="border border-border px-2 py-1">{row.COMERCIAL}</td>
-                <td className="border border-border px-2 py-1 text-xs max-w-[300px] truncate">{row.JUSTIFICATIVA}</td>
+        {employees.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Nenhum funcionário encontrado para este período.
+          </div>
+        ) : (
+          <table className="w-full text-xs border border-border">
+            <thead>
+              <tr className="bg-muted">
+                <th className="border border-border px-2 py-1.5 text-left font-medium w-[120px]">DATA</th>
+                <th className="border border-border px-2 py-1.5 text-left font-medium w-[120px]">DIA DA SEMANA</th>
+                <th className="border border-border px-2 py-1.5 text-left font-medium">VENDEDOR/PROMOTOR</th>
+                <th className="border border-border px-2 py-1.5 text-left font-medium w-[140px]">SUPORTE</th>
+                <th className="border border-border px-2 py-1.5 text-left font-medium w-[140px]">COMERCIAL</th>
+                <th className="border border-border px-2 py-1.5 text-left font-medium">JUSTIFICATIVA</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {generateData().map((row, i) => (
+                <tr key={i} className={i % 2 === 1 ? 'bg-muted/30' : ''}>
+                  <td className="border border-border px-2 py-1 text-sm">{row.DATA}</td>
+                  <td className="border border-border px-2 py-1 text-sm">{row['DIA DA SEMANA']}</td>
+                  <td className="border border-border px-2 py-1 font-medium">{row['VENDEDOR/PROMOTOR']}</td>
+                  <td className="border border-border px-2 py-1">{row.SUPORTE}</td>
+                  <td className="border border-border px-2 py-1">{row.COMERCIAL}</td>
+                  <td className="border border-border px-2 py-1 text-xs max-w-[300px] truncate">{row.JUSTIFICATIVA}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

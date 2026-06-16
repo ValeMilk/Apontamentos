@@ -10,7 +10,7 @@ const ExportPage = () => {
   const { user } = useAuth();
   const {
     daysInMonth,
-    filteredEmployees,
+    allEmployees,
     supervisors,
     getRecord,
     currentDate,
@@ -54,7 +54,7 @@ const ExportPage = () => {
 
       <main className="max-w-[1800px] mx-auto px-4 py-6">
         <DataExport
-          employees={filteredEmployees}
+          employees={allEmployees}
           daysInMonth={daysInMonth}
           getRecord={getRecord}
           periodLabel={periodLabel}

@@ -129,6 +129,8 @@ export function useAttendance() {
     );
   }, [employeesState, selectedSupervisor]);
 
+  const allEmployees = useMemo(() => dedupeById(employeesState), [employeesState]);
+
   const currentSupervisor = useMemo(() => {
     if (selectedSupervisor === 'all') return null;
     return supervisorsState.find(s => s.id === selectedSupervisor) || null;
@@ -812,6 +814,7 @@ export function useAttendance() {
     justifications,
     daysInMonth,
     filteredEmployees,
+    allEmployees,
     currentSupervisor,
     supervisors: supervisorsState,
     getRecord,
