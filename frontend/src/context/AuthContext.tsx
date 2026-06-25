@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { if (refreshToken) localStorage.setItem('refreshToken', refreshToken); else localStorage.removeItem('refreshToken'); } catch {}
   }, [refreshToken]);
 
-  // Auto-refresh access token every 14 minutes (before 15min expiry)
+  // Auto-refresh access token every 13 minutes (before 15min expiry)
   useEffect(() => {
     if (!refreshToken || !accessToken) {
       if (refreshTimerRef.current) {
@@ -64,8 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await res.json();
           setAccessToken(data.accessToken);
           if (data.refreshToken) setRefreshToken(data.refreshToken);
+          console.log('Token refreshed successfully');
         } else {
           // Refresh failed, log out user
+          console.error('Token refresh failed, logging out');
           logout();
         }
       } catch (error) {
@@ -74,8 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Refresh immediately on mount if needed, then every 14 minutes
-    refreshTimerRef.current = setInterval(doRefresh, 14 * 60 * 1000);
+    // Refresh immediately on mount, then every 13 minutes
+    doRefresh();
+    refreshTimerRef.current = setInterval(doRefresh, 13 * 60 * 1000);
 
     return () => {
       if (refreshTimerRef.current) {
@@ -84,6 +87,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
   }, [refreshToken, accessToken]);
+
+  // Force logout for users without refreshToken (logged in before refresh token implementation)
+  useEffect(() => {
+    if (accessToken && !refreshToken) {
+      console.warn('No refresh token found - forcing re-login');
+      alert('Sua sessão expirou. Por favor, faça login novamente.');
+      logout();
+    }
+  }, [accessToken, refreshToken]);
 
   // If there is an accessToken but the stored user is missing or legacy-shaped,
   // try to fetch the profile from the backend to populate `user` correctly.
