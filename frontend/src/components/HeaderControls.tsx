@@ -97,12 +97,11 @@ export function HeaderControls({
   ];
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm mb-6">
+    <div className="bg-card rounded-xl mb-8 overflow-hidden elevation-1">
       {/* Linha 1: Período + Ações principais */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border">
-        <div className="flex items-center gap-3 flex-wrap">
-          <Calendar className="w-5 h-5 text-primary shrink-0" />
-          <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5 border-b border-border/50">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -117,9 +116,9 @@ export function HeaderControls({
               <TooltipContent>Mês anterior</TooltipContent>
             </Tooltip>
 
-            <div className="px-4 text-center min-w-[180px]">
-              <div className="font-bold text-base text-primary leading-tight">{monthLabel}</div>
-              <div className="text-[11px] text-muted-foreground leading-tight">{periodRangeLabel}</div>
+            <div className="px-3">
+              <div className="font-semibold text-lg text-foreground leading-tight">{monthLabel}</div>
+              <div className="text-xs text-muted-foreground leading-tight font-normal">{periodRangeLabel}</div>
             </div>
 
             <Tooltip>
@@ -226,12 +225,12 @@ export function HeaderControls({
       </div>
 
       {/* Linha 2: Visão + Equipe */}
-      <div className="flex flex-wrap items-center gap-4 p-4 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="flex flex-wrap items-center gap-6 px-6 py-4 bg-muted/20">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Visão:
           </span>
-          <div className="flex gap-1 bg-background rounded-lg p-1 border border-border">
+          <div className="flex gap-1 bg-background rounded-lg p-0.5">
             {roles.map((role) => {
               const cfg = ROLE_CONFIG[role];
               const Icon = cfg.icon;
@@ -244,18 +243,18 @@ export function HeaderControls({
                   size="sm"
                   onClick={() => onRoleChange(role)}
                   disabled={isDisabled}
-                  className="gap-1.5 h-8"
+                  className="gap-1.5 h-9 rounded-md font-normal"
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">{cfg.label}</span>
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden md:inline text-sm">{cfg.label}</span>
                 </Button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Equipe:
           </span>
           <Select
@@ -263,10 +262,10 @@ export function HeaderControls({
             onValueChange={onSupervisorChange}
             disabled={currentUserRole === 'supervisor' && selectedSupervisor !== 'all'}
           >
-            <SelectTrigger className="max-w-[280px] h-9">
+            <SelectTrigger className="max-w-[280px] h-9 border-border/50">
               <SelectValue placeholder="Selecione equipe..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="elevation-2">
               {currentUserRole === 'admin' && <SelectItem value="all">Todas as equipes</SelectItem>}
               {supervisors.map((sup) => (
                 <SelectItem key={sup.id} value={sup.id}>
@@ -279,9 +278,9 @@ export function HeaderControls({
       </div>
 
       {/* Linha 3: Legenda */}
-      <div className="px-4 py-3 bg-muted/10">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-          <span className="font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="px-6 py-4 bg-background/50">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 text-xs">
+          <span className="font-medium text-muted-foreground uppercase tracking-wider mr-2">
             Legenda:
           </span>
           {[
@@ -296,13 +295,13 @@ export function HeaderControls({
             { cls: 'cell-sunday', code: 'D', label: 'Domingo' },
             { cls: 'cell-fd', code: 'FD', label: 'Feriado' },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5">
+            <div key={item.label} className="flex items-center gap-2">
               <span
-                className={`min-w-[28px] h-5 px-1 rounded ${item.cls} flex items-center justify-center text-[10px]`}
+                className={`min-w-[32px] h-6 px-2 rounded-md ${item.cls} flex items-center justify-center text-xs font-medium`}
               >
                 {item.code}
               </span>
-              <span className="text-foreground/80">{item.label}</span>
+              <span className="text-foreground/70 font-normal">{item.label}</span>
             </div>
           ))}
         </div>
@@ -311,13 +310,13 @@ export function HeaderControls({
       {/* Sidebar de período */}
       {showPeriodSidebar && (
         <div
-          className="fixed left-4 top-24 z-50 w-72 rounded-lg border border-border bg-card p-4 shadow-2xl"
+          className="fixed left-4 top-24 z-50 w-72 rounded-xl border border-border/50 bg-card p-5 elevation-4"
           style={{ maxHeight: '70vh', overflowY: 'auto' }}
         >
-          <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/50">
             <div>
-              <div className="text-sm font-semibold text-primary">Período do Mês</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-sm font-semibold text-foreground">Período do Mês</div>
+              <div className="text-xs text-muted-foreground font-normal mt-0.5">
                 {format(period.start, "dd 'de' MMM", { locale: ptBR })} →{' '}
                 {format(period.end, "dd 'de' MMM", { locale: ptBR })}
               </div>
@@ -325,24 +324,24 @@ export function HeaderControls({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-8 w-8 rounded-md"
               onClick={() => setShowPeriodSidebar(false)}
             >
               <X className="w-4 h-4" />
             </Button>
           </div>
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {period.days.map((d) => {
               const isSunday = d.getDay() === 0;
               return (
                 <li
                   key={d.toISOString()}
-                  className={`flex items-center justify-between text-[13px] px-2 py-1 rounded ${
-                    isSunday ? 'bg-muted/60 text-muted-foreground' : 'hover:bg-muted/40'
+                  className={`flex items-center justify-between text-sm px-3 py-2 rounded-md ${
+                    isSunday ? 'bg-muted/40 text-muted-foreground' : 'hover:bg-muted/30'
                   }`}
                 >
                   <span className="font-medium">{format(d, 'dd/MM')}</span>
-                  <span className="text-xs text-muted-foreground">{WEEKDAY_ABBR_PT[d.getDay()]}</span>
+                  <span className="text-xs text-muted-foreground font-normal">{WEEKDAY_ABBR_PT[d.getDay()]}</span>
                 </li>
               );
             })}

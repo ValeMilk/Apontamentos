@@ -202,22 +202,22 @@ const Index = () => {
         setSelectedSupervisor={setSelectedSupervisor}
       />
       {/* Page Header */}
-      <header className="bg-primary text-primary-foreground py-4 px-6 shadow-lg sticky top-0 z-50">
-        <div className="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary-foreground/10 rounded-lg p-2">
-              <ClipboardList className="w-6 h-6" />
+      <header className="bg-card border-b border-border/50 py-5 px-6 sticky top-0 z-50 elevation-1">
+        <div className="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-primary/10 rounded-xl p-2.5">
+              <ClipboardList className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Sistema de Apontamento de Presença</h1>
-              <p className="text-sm text-primary-foreground/80">Gestão de frequência de funcionários</p>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">Sistema de Apontamento de Presença</h1>
+              <p className="text-sm text-muted-foreground font-normal">Gestão de frequência de funcionários</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {(user?.role === 'admin' || user?.role === 'gerente') && (
               <Link
                 to="/admin/usuarios"
-                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
+                className="text-sm bg-muted/50 hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-all font-normal inline-flex items-center gap-2"
               >
                 <UserCog className="w-4 h-4" />
                 Usuários
@@ -226,7 +226,7 @@ const Index = () => {
             {(user?.role === 'admin' || user?.role === 'gerente') && (
               <Link
                 to="/exportacao"
-                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
+                className="text-sm bg-muted/50 hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-all font-normal inline-flex items-center gap-2"
               >
                 <FileBarChart2 className="w-4 h-4" />
                 Exportação
@@ -235,7 +235,7 @@ const Index = () => {
             {user?.role === 'admin' && (
               <Link
                 to="/admin/logs"
-                className="text-sm bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground px-3 py-1.5 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
+                className="text-sm bg-muted/50 hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-all font-normal inline-flex items-center gap-2"
               >
                 <ScrollText className="w-4 h-4" />
                 Logs
@@ -244,9 +244,9 @@ const Index = () => {
             {currentUserRole !== 'expectador' && !isMonthLocked && (
               <AutoSaveStatus status={autosaveStatus} />
             )}
-            <div className="text-sm bg-primary-foreground/15 px-3 py-1.5 rounded-lg inline-flex items-center gap-2">
-              <UserCircle2 className="w-4 h-4 text-primary-foreground/80" />
-              <span className="font-semibold">
+            <div className="text-sm bg-muted/30 px-4 py-2 rounded-lg inline-flex items-center gap-2.5">
+              <UserCircle2 className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium text-foreground">
                 {currentUserRole === 'admin' ? 'Administrador' : currentUserRole === 'gerente' ? 'Gerente' : currentUserRole === 'expectador' ? 'Expectador' : currentSupervisor?.name || 'Supervisor'}
               </span>
             </div>
@@ -255,7 +255,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-[1800px] mx-auto px-4 py-6">
+      <main className="max-w-[1800px] mx-auto px-6 py-8">
         <HeaderControls
           currentDate={currentDate}
           onDateChange={setCurrentDate}
@@ -309,13 +309,13 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-card border-t border-border py-6 px-6 mt-8">
-        <div className="max-w-[1800px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
+      <footer className="bg-card/50 border-t border-border/50 py-8 px-6 mt-12">
+        <div className="max-w-[1800px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2.5">
             <ClipboardList className="w-4 h-4" />
-            <span>Sistema de Apontamento de Presença</span>
+            <span className="font-normal">Sistema de Apontamento de Presença</span>
           </div>
-          <span className="text-xs">© {new Date().getFullYear()} — Todos os direitos reservados</span>
+          <span className="text-xs font-normal">© {new Date().getFullYear()} — Todos os direitos reservados</span>
         </div>
       </footer>
     </div>

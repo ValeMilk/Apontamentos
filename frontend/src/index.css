@@ -6,33 +6,33 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 60% 15%;
+    --background: 0 0% 100%;
+    --foreground: 220 13% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 60% 15%;
+    --card-foreground: 220 13% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 60% 15%;
+    --popover-foreground: 220 13% 18%;
 
-    --primary: 220 70% 25%;
+    --primary: 220 70% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 30% 90%;
-    --secondary-foreground: 220 60% 15%;
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 13% 18%;
 
-    --muted: 220 20% 94%;
-    --muted-foreground: 220 15% 45%;
+    --muted: 220 10% 97%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 45 100% 60%;
-    --accent-foreground: 220 60% 15%;
+    --accent: 220 15% 96%;
+    --accent-foreground: 220 13% 18%;
 
-    --destructive: 0 75% 55%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 85%;
-    --input: 220 20% 85%;
-    --ring: 220 70% 25%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 220 70% 50%;
 
     --radius: 0.5rem;
 
@@ -80,9 +80,9 @@
     --status-folga: 330 55% 55%;
 
     /* Table specific */
-    --table-header: 220 70% 20%;
+    --table-header: 220 13% 18%;
     --table-header-foreground: 0 0% 100%;
-    --table-row-alt: 220 20% 96%;
+    --table-row-alt: 220 10% 98%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -158,60 +158,62 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.011em;
   }
 }
 
 @layer components {
   .cell-present {
-    @apply bg-[hsl(var(--status-present))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-present))] text-white font-medium;
   }
   
   .cell-absent {
-    @apply bg-[hsl(var(--status-absent))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-absent))] text-white font-medium;
   }
   
   .cell-falta-tarde {
-    @apply bg-[hsl(var(--status-falta-tarde))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-falta-tarde))] text-white font-medium;
   }
   
   .cell-falta-manha {
-    @apply bg-[hsl(var(--status-falta-manha))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-falta-manha))] text-white font-medium;
   }
   
   .cell-atestado {
-    @apply bg-[hsl(var(--status-atestado))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-atestado))] text-white font-medium;
   }
   
   .cell-abono-falta {
-    @apply bg-[hsl(var(--status-abono-falta))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-abono-falta))] text-white font-medium;
   }
   
   .cell-abono-trab {
-    @apply bg-[hsl(var(--status-abono-trab))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-abono-trab))] text-white font-medium;
   }
   
   .cell-folga {
-    @apply bg-[hsl(var(--status-folga))] text-white font-semibold;
+    @apply bg-[hsl(var(--status-folga))] text-white font-medium;
   }
   
   .cell-sunday {
-    @apply bg-[hsl(var(--status-sunday))] text-foreground/70 font-medium;
+    @apply bg-muted text-muted-foreground font-normal;
   }
   
   .cell-holiday {
-    @apply bg-[hsl(var(--status-holiday))] text-white font-medium;
+    @apply bg-[hsl(var(--status-holiday))] text-white font-normal;
   }
 
   .cell-fd {
-    @apply bg-[hsl(var(--status-fd))] text-white font-medium;
+    @apply bg-[hsl(var(--status-fd))] text-white font-normal;
   }
 
   .cell-feriado {
-    @apply bg-[hsl(var(--status-fd))] text-white font-medium;
+    @apply bg-[hsl(var(--status-fd))] text-white font-normal;
   }
   
   .table-header-cell {
-    @apply bg-[hsl(var(--table-header))] text-[hsl(var(--table-header-foreground))] font-semibold;
+    @apply bg-[hsl(var(--table-header))] text-[hsl(var(--table-header-foreground))] font-medium;
   }
 
   /* Elevation Utilities - Material Design 3 */
