@@ -10,7 +10,7 @@ import { AtestadosSection } from '@/components/AtestadosSection';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2, Check, Loader2, CloudOff } from 'lucide-react';
+import { ClipboardList, UserCog, FileBarChart2, ScrollText, UserCircle2, Check, Loader2, CloudOff, Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AutosaveStatus } from '@/hooks/useAttendance';
 
@@ -239,6 +239,24 @@ const Index = () => {
               >
                 <ScrollText className="w-4 h-4" />
                 Logs
+              </Link>
+            )}
+            {user?.role === 'supervisor' && (
+              <Link
+                to="/contratacao"
+                className="text-sm bg-muted/50 hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-all font-normal inline-flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nova Contratação
+              </Link>
+            )}
+            {(user?.role === 'admin' || user?.role === 'gerente') && (
+              <Link
+                to="/contratacoes"
+                className="text-sm bg-muted/50 hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-all font-normal inline-flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Contratações
               </Link>
             )}
             {currentUserRole !== 'expectador' && !isMonthLocked && (

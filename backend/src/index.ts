@@ -12,6 +12,7 @@ import supervisorsRoutes from './routes/supervisors.js';
 import employeesRoutes from './routes/employees.js';
 import monthsRoutes from './routes/months.js';
 import auditLogsRoutes from './routes/auditLogs.js';
+import hiringsRoutes from './routes/hirings.js';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use('/api/supervisors', supervisorsRoutes);
 app.use('/api/employees', employeesRoutes);
 app.use('/api/months', monthsRoutes);
 app.use('/api/audit-logs', auditLogsRoutes);
+app.use('/api/hirings', hiringsRoutes);
 
 // new routes were added: attendance (save/fetch) and justifications
 

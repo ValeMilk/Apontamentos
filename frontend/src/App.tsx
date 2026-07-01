@@ -9,6 +9,8 @@ import { LoginPage } from "./pages/LoginPage";
 import AdminUsers from "./pages/AdminUsers";
 import AuditLogs from "./pages/AuditLogs";
 import ExportPage from "./pages/ExportPage";
+import { HiringForm } from "./pages/HiringPage";
+import HiringListPage from "./pages/HiringListPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +57,32 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <ExportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contratacao"
+            element={
+              <ProtectedRoute>
+                {(() => {
+                  const { user } = useAuth();
+                  return user?.role === 'supervisor' ? <HiringForm /> : <Navigate to="/" />;
+                })()}
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contratacoes"
+            element={
+              <ProtectedRoute>
+                {(() => {
+                  const { user } = useAuth();
+                  return ['admin', 'gerente'].includes(user?.role || '') ? (
+                    <HiringListPage />
+                  ) : (
+                    <Navigate to="/" />
+                  );
+                })()}
               </ProtectedRoute>
             }
           />
