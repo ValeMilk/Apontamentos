@@ -308,8 +308,6 @@ const Index = () => {
           isMonthLocked={isMonthLocked}
           pendingAtKeys={pendingAtKeys}
         />
-        )}
-
 
         <JustificationsSection
           justifications={filteredJustifications}
