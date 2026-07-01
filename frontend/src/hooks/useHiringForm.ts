@@ -12,7 +12,10 @@ export function useHiringForm() {
       try {
         setLoading(true);
         setError('');
-        const response = await axios.post(`${API_URL}/api/hirings`, data);
+        const accessToken = localStorage.getItem('accessToken');
+        const response = await axios.post(`${API_URL}/api/hirings`, data, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         return response.data;
       } catch (err: any) {
         const message = err.response?.data?.error || 'Erro ao criar ficha';
@@ -30,7 +33,10 @@ export function useHiringForm() {
       try {
         setLoading(true);
         setError('');
-        const response = await axios.put(`${API_URL}/api/hirings/${id}`, data);
+        const accessToken = localStorage.getItem('accessToken');
+        const response = await axios.put(`${API_URL}/api/hirings/${id}`, data, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         return response.data;
       } catch (err: any) {
         const message = err.response?.data?.error || 'Erro ao atualizar ficha';
@@ -47,13 +53,16 @@ export function useHiringForm() {
     try {
       setLoading(true);
       setError('');
+      const accessToken = localStorage.getItem('accessToken');
       const params = new URLSearchParams();
       if (filters?.page) params.append('page', filters.page);
       if (filters?.limit) params.append('limit', filters.limit);
       if (filters?.status) params.append('status', filters.status);
       if (filters?.supervisorId) params.append('supervisorId', filters.supervisorId);
 
-      const response = await axios.get(`${API_URL}/api/hirings?${params.toString()}`);
+      const response = await axios.get(`${API_URL}/api/hirings?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       return response.data;
     } catch (err: any) {
       const message = err.response?.data?.error || 'Erro ao carregar fichas';
@@ -68,7 +77,10 @@ export function useHiringForm() {
     try {
       setLoading(true);
       setError('');
-      const response = await axios.get(`${API_URL}/api/hirings/${id}`);
+      const accessToken = localStorage.getItem('accessToken');
+      const response = await axios.get(`${API_URL}/api/hirings/${id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       return response.data;
     } catch (err: any) {
       const message = err.response?.data?.error || 'Erro ao obter ficha';
@@ -84,9 +96,12 @@ export function useHiringForm() {
       try {
         setLoading(true);
         setError('');
+        const accessToken = localStorage.getItem('accessToken');
         const response = await axios.patch(`${API_URL}/api/hirings/${id}/approve`, {
           userId,
           userRole,
+        }, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         return response.data;
       } catch (err: any) {
@@ -105,10 +120,13 @@ export function useHiringForm() {
       try {
         setLoading(true);
         setError('');
+        const accessToken = localStorage.getItem('accessToken');
         const response = await axios.patch(`${API_URL}/api/hirings/${id}/reject`, {
           userId,
           userRole,
           motivoRejeicao,
+        }, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         return response.data;
       } catch (err: any) {
@@ -127,8 +145,10 @@ export function useHiringForm() {
       try {
         setLoading(true);
         setError('');
+        const accessToken = localStorage.getItem('accessToken');
         const response = await axios.delete(`${API_URL}/api/hirings/${id}`, {
           data: { userId, userRole },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         return response.data;
       } catch (err: any) {
