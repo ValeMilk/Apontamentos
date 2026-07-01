@@ -158,6 +158,7 @@ export function HiringListPage() {
               <h1 className="text-3xl font-semibold text-foreground">Fichas de Admissão</h1>
               <p className="text-muted-foreground mt-2">Gerencie e analise as contratações</p>
             </div>
+          </div>
           <Link to="/contratacao">
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
