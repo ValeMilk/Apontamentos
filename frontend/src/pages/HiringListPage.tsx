@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, XCircle, Clock, Plus, Eye, Trash2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Plus, Eye, Trash2, AlertCircle, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Hiring {
@@ -38,11 +38,11 @@ export function HiringListPage() {
   const loadHirings = async () => {
     try {
       setError('');
-      const filters = statusFilter ? { status: statusFilter } : {};
+      const filters = statusFilter ? { status: statusFilter, limit: 20, page: 1 } : { limit: 20, page: 1 };
       const data = await fetchHirings(filters);
       setHirings(data.data || []);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Erro ao carregar fichas');
     }
   };
 
@@ -146,10 +146,18 @@ export function HiringListPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-semibold text-foreground">Fichas de Admissão</h1>
-            <p className="text-muted-foreground mt-2">Gerencie e analise as contratações</p>
-          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">Voltar</span>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-semibold text-foreground">Fichas de Admissão</h1>
+              <p className="text-muted-foreground mt-2">Gerencie e analise as contratações</p>
+            </div>
           <Link to="/contratacao">
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -211,8 +219,10 @@ export function HiringListPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <div className="space-y-3 py-8">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-12 bg-muted rounded-lg animate-pulse" />
+                ))}
               </div>
             ) : hirings.length === 0 ? (
               <div className="text-center py-12">

@@ -157,9 +157,24 @@ export function HiringForm() {
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-foreground">Ficha Admissional</h1>
-          <p className="text-muted-foreground mt-2">Preencha todos os dados do novo candidato</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Voltar
+              </Button>
+              <div>
+                <h1 className="text-3xl font-semibold text-foreground">Ficha Admissional</h1>
+                <p className="text-muted-foreground mt-1">Preencha todos os dados do novo candidato</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Error Alert */}
