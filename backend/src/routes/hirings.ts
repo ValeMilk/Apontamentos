@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Hiring, IHiring } from '../models/Hiring';
-import { authMiddleware } from '../middleware/auth';
+import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 
@@ -8,7 +8,7 @@ const router = Router();
  * LISTAR todas as fichas de admissão
  * GET /api/hirings
  */
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, status, supervisorId } = req.query;
     const skip = ((Number(page) - 1) * Number(limit)) || 0;
@@ -43,7 +43,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
  * OBTER uma ficha específica
  * GET /api/hirings/:id
  */
-router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const hiring = await Hiring.findById(req.params.id);
     if (!hiring) {
@@ -59,7 +59,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
  * CRIAR nova ficha de admissão
  * POST /api/hirings
  */
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const { dadosPessoais, dadosContato, informacoesAdmissao } = req.body;
 
@@ -94,7 +94,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
  * ATUALIZAR ficha de admissão
  * PUT /api/hirings/:id
  */
-router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -127,7 +127,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
  * APROVAR ficha de admissão (apenas admin/gerente)
  * PATCH /api/hirings/:id/approve
  */
-router.patch('/:id/approve', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/approve', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { userRole } = req.body;
@@ -160,7 +160,7 @@ router.patch('/:id/approve', authMiddleware, async (req: Request, res: Response)
  * REJEITAR ficha de admissão (apenas admin/gerente)
  * PATCH /api/hirings/:id/reject
  */
-router.patch('/:id/reject', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/reject', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { userRole, motivoRejeicao } = req.body;
@@ -198,7 +198,7 @@ router.patch('/:id/reject', authMiddleware, async (req: Request, res: Response) 
  * DELETAR ficha de admissão
  * DELETE /api/hirings/:id
  */
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { userRole } = req.body;
