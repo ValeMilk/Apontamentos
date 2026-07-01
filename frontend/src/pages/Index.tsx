@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Login } from '@/components/Login';
 import { HeaderControls } from '@/components/HeaderControls';
 import { Link } from 'react-router-dom';
-import { AttendanceTable } from '@/components/AttendanceTable';
+import { AttendanceTableMemo } from '@/components/AttendanceTable';
 import { JustificationsSection } from '@/components/JustificationsSection';
 import { AtestadosSection } from '@/components/AtestadosSection';
 import { format } from 'date-fns';
@@ -291,7 +291,19 @@ const Index = () => {
           monthLockLoading={monthLockLoading}
         />
 
-        <AttendanceTable
+        {filteredEmployees.length === 0 ? (
+          <div className="space-y-4 py-12">
+            <div className="px-6">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Carregando dados de apontamento...</h3>
+              <div className="space-y-3">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="h-10 bg-muted rounded-lg animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <AttendanceTableMemo
           employees={filteredEmployees}
           daysInMonth={daysInMonth}
           getRecord={getRecord}
@@ -308,7 +320,10 @@ const Index = () => {
           isMonthLocked={isMonthLocked}
           pendingAtKeys={pendingAtKeys}
         />
+        )}
 
+        {filteredEmployees.length > 0 && (
+          <>
         <JustificationsSection
           justifications={filteredJustifications}
           employees={filteredEmployees}
@@ -322,6 +337,8 @@ const Index = () => {
           justifications={filteredAtestados}
           employees={filteredEmployees}
         />
+          </>
+        )}
 
         {/* If not authenticated, show login */}
       </main>

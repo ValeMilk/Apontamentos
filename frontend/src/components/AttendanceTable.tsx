@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 import { format } from 'date-fns';
 import { Employee, DayInfo, AttendanceRecord, AttendanceCode } from '@/types/attendance';
 import { AttendanceCell } from './AttendanceCell';
@@ -643,3 +643,14 @@ export function AttendanceTable({
     </div>
   );
 }
+
+export const AttendanceTableMemo = memo(AttendanceTable, (prevProps, nextProps) => {
+  // Custom comparison: só re-render se mudar employees, daysInMonth, ou funções críticas
+  return (
+    prevProps.employees === nextProps.employees &&
+    prevProps.daysInMonth === nextProps.daysInMonth &&
+    prevProps.currentUserRole === nextProps.currentUserRole &&
+    prevProps.isMonthLocked === nextProps.isMonthLocked &&
+    prevProps.supervisorName === nextProps.supervisorName
+  );
+});
