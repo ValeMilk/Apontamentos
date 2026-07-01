@@ -20,6 +20,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+const SupervisorRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return user.role === 'supervisor' ? <>{children}</> : <Navigate to="/" replace />;
+};
+
+const AdminGerenteRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  return ['admin', 'gerente'].includes(user.role || '') ? <>{children}</> : <Navigate to="/" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -63,27 +75,17 @@ const App = () => (
           <Route
             path="/contratacao"
             element={
-              <ProtectedRoute>
-                {(() => {
-                  const { user } = useAuth();
-                  return user?.role === 'supervisor' ? <HiringForm /> : <Navigate to="/" />;
-                })()}
-              </ProtectedRoute>
+              <SupervisorRoute>
+                <HiringForm />
+              </SupervisorRoute>
             }
           />
           <Route
             path="/contratacoes"
             element={
-              <ProtectedRoute>
-                {(() => {
-                  const { user } = useAuth();
-                  return ['admin', 'gerente'].includes(user?.role || '') ? (
-                    <HiringListPage />
-                  ) : (
-                    <Navigate to="/" />
-                  );
-                })()}
-              </ProtectedRoute>
+              <AdminGerenteRoute>
+                <HiringListPage />
+              </AdminGerenteRoute>
             }
           />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
