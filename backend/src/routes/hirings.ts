@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Hiring, IHiring } from '../models/Hiring';
-import { authenticateJWT } from '../middleware/auth';
+import { Hiring, IHiring } from '../models/Hiring.js';
+import { authenticateJWT } from '../middleware/auth.js';
 
 const router = Router();
 
