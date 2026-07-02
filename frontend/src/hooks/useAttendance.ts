@@ -224,6 +224,7 @@ export function useAttendance() {
       if (hasUnsavedChanges) return;
       try {
         const periodParams = periodStart && periodEnd ? `?startDay=${periodStart}&endDay=${periodEnd}` : '';
+        console.log('[useAttendance] Fetching attendance data with params:', periodParams);
         const [attRes, justRes] = await Promise.all([
           fetch(`/api/attendance${periodParams}`, {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -234,18 +235,25 @@ export function useAttendance() {
         ]);
         if (attRes.ok) {
           const att = await attRes.json();
+          console.log('[useAttendance] Loaded attendance records:', att.length);
           if (!mounted) return;
           setRecords(att.map((r: any) => ({ employeeId: r.employeeId, day: r.day, apontador: r.apontador, supervisor: r.supervisor })));
           setDirtyRecordKeys(new Set());
           setHasUnsavedChanges(false);
+        } else {
+          console.error('[useAttendance] Failed to fetch attendance:', attRes.status, attRes.statusText);
         }
 
         if (justRes.ok) {
           const js = await justRes.json();
+          console.log('[useAttendance] Loaded justifications:', js.length);
           if (!mounted) return;
           setJustifications(js.map((j: any) => ({ id: j._id || `just-${Date.now()}`, employeeId: j.employeeId, day: j.day, text: j.text, attestFile: j.attestFile || undefined })));
+        } else {
+          console.error('[useAttendance] Failed to fetch justifications:', justRes.status, justRes.statusText);
         }
       } catch (e) {
+        console.error('[useAttendance] Error loading data:', e);
         // ignore errors (backend may not be available)
       }
     })();
