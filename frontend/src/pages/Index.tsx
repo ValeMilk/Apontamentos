@@ -214,6 +214,12 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              to="/"
+              className="text-sm bg-muted/50 hover:bg-muted text-foreground px-4 py-2 rounded-lg transition-all font-normal inline-flex items-center gap-2"
+            >
+              ← Voltar ao Menu
+            </Link>
             {(user?.role === 'admin' || user?.role === 'gerente') && (
               <Link
                 to="/admin/usuarios"
