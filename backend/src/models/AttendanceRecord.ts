@@ -44,5 +44,7 @@ const attendanceRecordSchema = new mongoose.Schema(
 attendanceRecordSchema.index({ employeeId: 1, day: 1, supervisorId: 1 }, { unique: true });
 // Secondary index for supervisor-filtered queries (Phase 1 optimization)
 attendanceRecordSchema.index({ supervisorId: 1, day: 1 });
+// Index for fast date range queries (performance optimization)
+attendanceRecordSchema.index({ day: 1 });
 
 export const AttendanceRecord = mongoose.model('AttendanceRecord', attendanceRecordSchema);

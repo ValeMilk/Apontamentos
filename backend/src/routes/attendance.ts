@@ -207,7 +207,10 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
       }
       
       // O(log n + k) with index { supervisorId: 1, day: 1 }
-      let recs = await AttendanceRecord.find(query).lean();
+      // Only select necessary fields for performance
+      let recs = await AttendanceRecord.find(query)
+        .select('employeeId day apontador supervisor supervisorId')
+        .lean();
       if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
       return res.json(recs);
     }
@@ -220,7 +223,10 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
         if (startDay) query.day.$gte = String(startDay);
         if (endDay) query.day.$lte = String(endDay);
       }
-      let recs = await AttendanceRecord.find(query).lean();
+      // Only select necessary fields for performance
+      let recs = await AttendanceRecord.find(query)
+        .select('employeeId day apontador supervisor supervisorId')
+        .lean();
       if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
       return res.json(recs);
     }
@@ -238,14 +244,25 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
         }
         
         // Phase 2: Use supervisorId index instead of regex - O(log n + k)
-        let recs = await AttendanceRecord.find(query).lean();
+        // Only select necessary fields for performance
+        let recs = await AttendanceRecord.find(query)
+          .select('employeeId day apontador supervisor supervisorId')
+          .lean();
         if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
         return res.json(recs);
       }
       
       // No supervisorId specified: return all (only for admin/full audit)
-      let recs = await AttendanceRecord.find({}).lean();
-      if (startDay || endDay) recs = recs.filter(r => inPeriod(String(r.day || '')));
+      const query: any = {};
+      if (startDay || endDay) {
+        query.day = {};
+        if (startDay) query.day.$gte = String(startDay);
+        if (endDay) query.day.$lte = String(endDay);
+      }
+      // Only select necessary fields for performance
+      let recs = await AttendanceRecord.find(query)
+        .select('employeeId day apontador supervisor supervisorId')
+        .lean();
       if (wantsChangedOnly) recs = recs.filter(r => isChanged(r));
       return res.json(recs);
     }

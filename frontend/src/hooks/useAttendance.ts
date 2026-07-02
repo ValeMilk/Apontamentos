@@ -23,6 +23,8 @@ export function useAttendance() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [dirtyRecordKeys, setDirtyRecordKeys] = useState<Set<string>>(new Set());
   const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
+  const [lastLoadedPeriod, setLastLoadedPeriod] = useState<string>('');
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Refs para autosave (não causam rerender)
   const autosaveTimerRef = useRef<number | null>(null);
@@ -222,9 +224,25 @@ export function useAttendance() {
     (async () => {
       if (!accessToken) return;
       if (hasUnsavedChanges) return;
+      
+      const periodKey = `${periodStart}|${periodEnd}`;
+      // Cache: skip if same period already loaded
+      if (periodKey === lastLoadedPeriod && records.length > 0) {
+        console.log('[useAttendance] Skipping fetch - data already loaded for period:', periodKey);
+        return;
+      }
+      
+      if (isLoadingData) {
+        console.log('[useAttendance] Already loading data, skipping duplicate request');
+        return;
+      }
+      
+      setIsLoadingData(true);
       try {
         const periodParams = periodStart && periodEnd ? `?startDay=${periodStart}&endDay=${periodEnd}` : '';
         console.log('[useAttendance] Fetching attendance data with params:', periodParams);
+        const startTime = performance.now();
+        
         const [attRes, justRes] = await Promise.all([
           fetch(`/api/attendance${periodParams}`, {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -233,13 +251,16 @@ export function useAttendance() {
             headers: { Authorization: `Bearer ${accessToken}` },
           }),
         ]);
+        
         if (attRes.ok) {
           const att = await attRes.json();
-          console.log('[useAttendance] Loaded attendance records:', att.length);
+          const loadTime = (performance.now() - startTime).toFixed(0);
+          console.log(`[useAttendance] Loaded ${att.length} attendance records in ${loadTime}ms`);
           if (!mounted) return;
           setRecords(att.map((r: any) => ({ employeeId: r.employeeId, day: r.day, apontador: r.apontador, supervisor: r.supervisor })));
           setDirtyRecordKeys(new Set());
           setHasUnsavedChanges(false);
+          setLastLoadedPeriod(periodKey);
         } else {
           console.error('[useAttendance] Failed to fetch attendance:', attRes.status, attRes.statusText);
         }
@@ -254,7 +275,8 @@ export function useAttendance() {
         }
       } catch (e) {
         console.error('[useAttendance] Error loading data:', e);
-        // ignore errors (backend may not be available)
+      } finally {
+        setIsLoadingData(false);
       }
     })();
     return () => { mounted = false; };
