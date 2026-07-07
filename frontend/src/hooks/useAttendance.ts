@@ -302,7 +302,11 @@ export function useAttendance() {
   // Dispara autosave com debounce (cancela timer anterior). Chamado em cada edição.
   const triggerAutosaveRef = useRef<() => void>(() => {});
   const triggerAutosave = useCallback(() => {
-    if (autosavePausedRef.current) return;
+    console.log('[triggerAutosave] debounce timer set for 300ms');
+    if (autosavePausedRef.current) {
+      console.log('[triggerAutosave] autosave is PAUSED, skipping');
+      return;
+    }
     if (autosaveTimerRef.current != null) {
       window.clearTimeout(autosaveTimerRef.current);
     }
@@ -315,7 +319,7 @@ export function useAttendance() {
       isSavingRef.current = true;
       setAutosaveStatus('saving');
       try {
-        console.debug('[autosave] disparando saveAll');
+        console.log('[autosave] triggered, saving pending changes...');
         const ok = await saveAllRef.current();
         if (ok) {
           setAutosaveStatus('saved');
@@ -334,7 +338,7 @@ export function useAttendance() {
           window.setTimeout(() => triggerAutosaveRef.current(), 300);
         }
       }
-    }, 800) as unknown as number;
+    }, 300) as unknown as number;
   }, []);
   useEffect(() => { triggerAutosaveRef.current = triggerAutosave; }, [triggerAutosave]);
 
@@ -391,6 +395,7 @@ export function useAttendance() {
       return next;
     });
     setHasUnsavedChanges(true);
+    console.log('[updateRecord] change detected for', employeeId, day, field, '=', value);
     // Atualiza records ref síncronamente
     {
       const JUST_CODES_TO_PREFILL: AttendanceCode[] = ['AT', 'ABF', 'ABT'];
@@ -734,6 +739,7 @@ export function useAttendance() {
 
   // Save records + justifications to backend
   const saveAll = useCallback(async () => {
+    console.log('[saveAll] starting save operation');
     try {
       // Lê dos refs (síncronos com updateRecord) — evita stale closure quando
       // flushAutosave é invocado imediatamente após updateRecord.
@@ -747,8 +753,13 @@ export function useAttendance() {
         ? currentRecords.filter((r) => savingKeys.has(makeRecordKey(r.employeeId, r.day)))
         : [];
 
-      // DEBUG: log payload to help diagnose save failures in browser
-      try { console.debug('[saveAll] sending records(delta)', recordsToSave); } catch (e) {}
+      // Log payload for debugging
+      console.log('[saveAll] sending', recordsToSave.length, 'record(s) and', currentJustifications.length, 'justification(s)');
+
+      if (recordsToSave.length === 0 && currentJustifications.length === 0) {
+        console.log('[saveAll] nothing to save, returning success');
+        return true;
+      }
 
       if (recordsToSave.length > 0) {
         const res = await fetch('/api/attendance', {
@@ -766,12 +777,12 @@ export function useAttendance() {
           }),
         });
         if (!res.ok) {
-          // attempt to read body for debugging
           let bodyText = '';
           try { bodyText = await res.text(); } catch (e) { bodyText = '<no body>'; }
           console.error('[saveAll] POST /api/attendance failed', res.status, bodyText);
           throw new Error('Failed to save attendance');
         }
+        console.log('[saveAll] ✓ attendance records saved successfully');
       }
 
       if (currentJustifications.length > 0) {
@@ -781,6 +792,7 @@ export function useAttendance() {
           body: JSON.stringify({ justifications: currentJustifications }),
         });
         if (!jres.ok) throw new Error('Failed to save justifications');
+        console.log('[saveAll] ✓ justifications saved successfully');
       }
 
       // Atualizar IDs reais das justificativas usando a resposta do POST acima — sem
@@ -794,18 +806,15 @@ export function useAttendance() {
         for (const k of dirtyRecordKeysRef.current) if (!savingKeys.has(k)) refNext.add(k);
         dirtyRecordKeysRef.current = refNext;
       }
+      // Single setState call to avoid React batching issues
       setDirtyRecordKeys(prev => {
-        if (prev.size === 0) return prev;
         const next = new Set<string>();
         for (const k of prev) if (!savingKeys.has(k)) next.add(k);
-        return next;
-      });
-      // hasUnsavedChanges só vira false se não houver chaves sujas remanescentes
-      setDirtyRecordKeys(prev => {
-        if (prev.size === 0) {
+        // If no dirty keys remain after save, clear unsaved changes flag
+        if (next.size === 0) {
           setHasUnsavedChanges(false);
         }
-        return prev;
+        return next;
       });
 
       return true;
