@@ -163,10 +163,11 @@ const Index = () => {
     return set;
   }, [justifications, filteredEmployees, daysInMonth, getRecord]);
 
-  // Autosave: status vem do hook useAttendance. Pausar quando mes bloqueado/expectador.
+  // Autosave: status vem do hook useAttendance. Pausar apenas para spectators (expectador).
+  // Se mês está travado, usuário não pode editar de qualquer forma, então não pausa autosave.
   useEffect(() => {
-    setAutosavePaused(currentUserRole === 'expectador' || isMonthLocked);
-  }, [currentUserRole, isMonthLocked, setAutosavePaused]);
+    setAutosavePaused(currentUserRole === 'expectador');
+  }, [currentUserRole, setAutosavePaused]);
 
   // Garantir flush do autosave antes de fechar/recarregar a página.
   // sendBeacon não funciona bem com auth header customizado, então usamos

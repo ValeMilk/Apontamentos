@@ -346,7 +346,9 @@ export function useAttendance() {
   // Usado quando precisamos garantir persistência (ex.: confirmar modal de justificativa,
   // beforeunload, troca de role/usuário).
   const flushAutosave = useCallback(async (): Promise<boolean> => {
-    if (autosavePausedRef.current) return true;
+    console.log('[flushAutosave] manual flush requested, bypassing pause state');
+    // NOTE: flushAutosave ALWAYS saves, even if autosave is paused
+    // Pause only affects periodic autosave, NOT manual flush (e.g., before logout)
     if (autosaveTimerRef.current != null) {
       window.clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
@@ -368,7 +370,7 @@ export function useAttendance() {
       }
       return !!ok;
     } catch (e) {
-      console.error('[flushAutosave] erro', e);
+      console.error('[flushAutosave] error', e);
       setAutosaveStatus('error');
       return false;
     } finally {
