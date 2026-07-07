@@ -62,6 +62,7 @@ export function HeaderControls({
   isMonthLocked = true,
   onToggleMonthLock,
   monthLockLoading = false,
+  flushAutosave,
 }: HeaderControlsProps) {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
