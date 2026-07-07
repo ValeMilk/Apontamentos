@@ -37,6 +37,7 @@ interface HeaderControlsProps {
   isMonthLocked?: boolean;
   onToggleMonthLock?: (unlock: boolean) => Promise<boolean>;
   monthLockLoading?: boolean;
+  flushAutosave?: () => Promise<boolean>;
 }
 
 const ROLE_CONFIG: Record<
@@ -209,7 +210,15 @@ export function HeaderControls({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
+                  // Flush autosave before logout to ensure data is persisted
+                  if (flushAutosave) {
+                    try {
+                      await flushAutosave();
+                    } catch (e) {
+                      console.error('Failed to flush autosave before logout:', e);
+                    }
+                  }
                   logout();
                   navigate('/login');
                 }}

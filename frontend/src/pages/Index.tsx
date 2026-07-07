@@ -294,6 +294,8 @@ const Index = () => {
           onToggleMonthLock={async (unlock: boolean) => {
             return unlock ? await unlockMonth() : await lockMonth();
           }}
+          flushAutosave={flushAutosave}
+          }}
           monthLockLoading={monthLockLoading}
         />
 
