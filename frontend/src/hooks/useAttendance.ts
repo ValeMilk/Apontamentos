@@ -782,7 +782,7 @@ export function useAttendance() {
           console.error('[saveAll] POST /api/attendance failed', res.status, bodyText);
           throw new Error('Failed to save attendance');
         }
-        console.log('[saveAll] ✓ attendance records saved successfully');
+        console.log('[saveAll] attendance records saved successfully');
       }
 
       if (currentJustifications.length > 0) {
@@ -792,7 +792,7 @@ export function useAttendance() {
           body: JSON.stringify({ justifications: currentJustifications }),
         });
         if (!jres.ok) throw new Error('Failed to save justifications');
-        console.log('[saveAll] ✓ justifications saved successfully');
+        console.log('[saveAll] justifications saved successfully');
       }
 
       // Atualizar IDs reais das justificativas usando a resposta do POST acima — sem
