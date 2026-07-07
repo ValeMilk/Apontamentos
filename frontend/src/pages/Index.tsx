@@ -295,7 +295,6 @@ const Index = () => {
             return unlock ? await unlockMonth() : await lockMonth();
           }}
           flushAutosave={flushAutosave}
-          }}
           monthLockLoading={monthLockLoading}
         />
 
