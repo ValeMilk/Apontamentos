@@ -166,28 +166,42 @@ export function useAttendance() {
         const deduped = dedupeById(mapped);
         setSupervisorsState(deduped);
 
-        // Try to load canonical employees list from backend (preferred)
+        // Try to load canonical employees list from backend (preferred).
+        // /api/employees is paginated (server defaults to 50/page, caps at 200/page) —
+        // loop through every page so a roster with 50+ employees total (e.g. after
+        // adding a new supervisor's team) isn't silently truncated.
         let employeesLoadedFromApi = false;
         try {
-          const empRes = await fetch(`/api/employees${employeesQueryString}`, {
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-          });
-          if (empRes.ok) {
+          const authHeaders = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
+          const baseQs = employeesQueryString; // '' or '?supervisorUserId=...'
+          const allEmps: any[] = [];
+          let page = 1;
+          const maxPages = 50; // safety guard: 50 * 200 = 10k employees
+          while (page <= maxPages) {
+            const sep = baseQs ? '&' : '?';
+            const empRes = await fetch(`/api/employees${baseQs}${sep}page=${page}&limit=200`, {
+              headers: authHeaders,
+            });
+            if (!empRes.ok) break;
             const data = await empRes.json();
             // Phase 3: Support both old array format and new paginated { employees, total, page, limit } format
             const emps = Array.isArray(data) ? data : (data?.employees || []);
-            if (mounted && Array.isArray(emps)) {
-              const mapped = emps
-                .map((e: any) => ({
-                  id: e.id || `${e.supervisorId}-${e.slug}`,
-                  name: e.name || e.displayName || e.slug,
-                  role: e.role || 'FUNCIONÁRIO',
-                  supervisorId: e.supervisorId,
-                  supervisorUserId: e.supervisorUserId || '',
-                }));
-              setEmployeesState(dedupeById(mapped));
-              employeesLoadedFromApi = true;
-            }
+            allEmps.push(...emps);
+            const totalPages = Array.isArray(data) ? 1 : (data?.totalPages || 1);
+            if (page >= totalPages || emps.length === 0) break;
+            page++;
+          }
+          if (mounted && allEmps.length > 0) {
+            const mapped = allEmps
+              .map((e: any) => ({
+                id: e.id || `${e.supervisorId}-${e.slug}`,
+                name: e.name || e.displayName || e.slug,
+                role: e.role || 'FUNCIONÁRIO',
+                supervisorId: e.supervisorId,
+                supervisorUserId: e.supervisorUserId || '',
+              }));
+            setEmployeesState(dedupeById(mapped));
+            employeesLoadedFromApi = true;
           }
         } catch (e) {
           // ignore and fall back to deriving employees below
